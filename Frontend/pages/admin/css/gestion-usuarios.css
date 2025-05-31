@@ -1,0 +1,246 @@
+/* --- Tarjetas estadísticas --- */
+.card {
+    border-radius: 1.2rem;
+    box-shadow: 0 4px 24px rgba(25, 118, 210, 0.08);
+    transition: box-shadow 0.2s, transform 0.2s;
+    background: #fff;
+    margin-bottom: 0;
+}
+.card:hover {
+    box-shadow: 0 8px 32px rgba(25, 118, 210, 0.13);
+    transform: translateY(-2px) scale(1.01);
+}
+.card-title {
+    font-weight: 700;
+    color: #1a237e;
+    letter-spacing: 0.5px;
+    font-size: 1.1rem;
+    margin-bottom: 0.5rem;
+}
+.card-text {
+    font-size: 2.5rem;
+    color: #1976d2;
+    font-weight: 700;
+    margin-bottom: 0;
+}
+
+/* --- Espaciados generales --- */
+.mb-4 {
+    margin-bottom: 2.2rem !important;
+}
+.mb-3 {
+    margin-bottom: 1.2rem !important;
+}
+
+/* --- Acciones rápidas --- */
+.btn.btn-primary {
+    background: linear-gradient(90deg, #1976d2 0%, #2196f3 100%);
+    border: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.08);
+    border-radius: 1rem;
+    padding: 0.9rem 1.2rem;
+}
+.btn.btn-primary:focus, .btn.btn-primary:hover {
+    background: linear-gradient(90deg, #1565c0 0%, #1976d2 100%);
+    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13);
+    outline: none;
+    transform: translateY(-1px) scale(1.01);
+}
+
+/* --- Mis Reservas Activas --- */
+.bg-light {
+    background-color: #f5f7fa !important;
+}
+.card .bi {
+    vertical-align: middle;
+}
+.card .d-flex.gap-2 {
+    margin-top: 1rem;
+}
+.card .btn-danger {
+    font-weight: 500;
+    border-radius: 0.7rem;
+}
+.card .btn-primary {
+    border-radius: 0.7rem;
+}
+
+/* --- Recursos y Ayuda --- */
+.card.text-center.h-100, .card.text-center.h-100.flex-fill {
+    min-height: 290px;
+    display: flex;
+    flex-direction: column;
+    justify-content: stretch;
+}
+.card-body.d-flex.flex-column.justify-content-between.align-items-center.flex-grow-1 {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+}
+.card-body > div {
+    flex-shrink: 0;
+}
+.card-body .btn {
+    margin-top: auto;
+    width: 90%;
+    max-width: 220px;
+}
+.card .fs-1 {
+    margin-bottom: 0.5rem;
+}
+.btn-outline-primary {
+    border-radius: 2rem;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 1px 4px rgba(25, 118, 210, 0.06);
+}
+.btn-outline-primary:hover, .btn-outline-primary:focus {
+    background: #1976d2;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.13);
+}
+@media (max-width: 991.98px) {
+    .card.text-center.h-100, .card.text-center.h-100.flex-fill {
+        min-height: 220px;
+    }
+    .card-body .btn {
+        width: 100%;
+    }
+}
+
+/* --- Notificaciones --- */
+.alert-success {
+    background-color: #e8f5e9;
+    color: #256029;
+    border-radius: 1rem;
+    border: none;
+    font-weight: 500;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.08);
+    padding: 1.1rem 1.5rem;
+    font-size: 1.05rem;
+}
+.alert-success .bi {
+    color: #43a047;
+}
+
+/* --- Títulos de sección --- */
+h5 {
+    font-weight: 700;
+    color: #1976d2;
+    letter-spacing: 0.5px;
+    margin-bottom: 1rem;
+}
+
+/* --- Responsive --- */
+@media (max-width: 991.98px) {
+    .container {
+        max-width: 98vw;
+        padding-left: 0.7rem;
+        padding-right: 0.7rem;
+    }
+}
+@media (max-width: 767.98px) {
+    .row > [class^='col-'] {
+        margin-bottom: 1rem;
+    }
+    .d-flex.flex-md-row {
+        flex-direction: column !important;
+    }
+    .btn-lg {
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+    }
+    .card {
+        margin-bottom: 1.2rem;
+    }
+    .card.text-center.h-100 {
+        min-height: 200px;
+    }
+}
+
+body {
+    background: #f8fafc;
+    min-height: 100vh;
+    font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+}
+
+.container {
+    max-width: 1100px;
+    background: #fff;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 32px rgba(25, 118, 210, 0.07);
+    padding: 2.2rem 2.5vw;
+    margin-top: 2.5rem;
+    margin-bottom: 2.5rem;
+}
+
+/* --- Botones de Mis Reservas Activas --- */
+.reserva-botones {
+    min-width: 140px;
+    z-index: 2;
+}
+.w-reserva-btn {
+    min-width: 140px;
+    width: 140px;
+    font-weight: 600;
+    border-radius: 0.7rem !important;
+    box-shadow: 0 2px 8px rgba(25, 118, 210, 0.07);
+    transition: box-shadow 0.2s, transform 0.2s;
+    font-size: 1rem;
+    padding: 0.6rem 0.7rem;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.w-reserva-btn:active, .w-reserva-btn:focus {
+    outline: none;
+    box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13);
+    transform: scale(0.98);
+}
+.w-reserva-btn i {
+    margin-right: 0.5em;
+}
+@media (max-width: 767.98px) {
+    .reserva-botones {
+        right: 1rem !important;
+        bottom: 1rem !important;
+        min-width: 100px;
+    }
+    .w-reserva-btn {
+        min-width: 100px;
+        width: 100px;
+        font-size: 0.95rem;
+        padding: 0.5rem 0.7rem;
+        height: 38px;
+    }
+}
+
+/* --- Mis Reservas Activas: texto más grande y legible --- */
+.card-body .card-title {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: #1976d2;
+    margin-bottom: 0.7rem;
+}
+.card-body p {
+    font-size: 1.13rem;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+.card-body p:last-child {
+    margin-bottom: 1.2rem;
+}
+@media (max-width: 767.98px) {
+    .card-body .card-title {
+        font-size: 1.1rem;
+    }
+    .card-body p {
+        font-size: 1rem;
+    }
+} 
