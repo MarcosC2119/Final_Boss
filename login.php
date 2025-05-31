@@ -80,21 +80,12 @@
 document.addEventListener('DOMContentLoaded', function() {
     // Este event listener se ejecuta cuando el DOM está completamente cargado
     
-    // ========== VERIFICAR SI SE SOLICITA LOGOUT ==========
-    // Revisar si la URL contiene parámetro ?logout=true
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('logout') === 'true') {
-        localStorage.removeItem('userData');
-        // Limpiar URL sin recargar página
-        window.history.replaceState({}, document.title, window.location.pathname);
-    }
-    
     // ========== VERIFICACIÓN DE SESIÓN ACTIVA ==========
     // Revisa si ya hay datos de usuario guardados en localStorage del navegador
     const userData = JSON.parse(localStorage.getItem('userData'));
     if (userData && userData.rol) {
-        // Si existe una sesión activa, mostrar opción de continuar o hacer logout
-        mostrarOpcionSesionActiva(userData);
+        // Si existe una sesión activa, redirige automáticamente al dashboard correspondiente
+        redirectToDashboard(userData.rol); // Llama a la función definida más abajo (línea 137)
         return; // Sale de la función para evitar configurar el formulario
     }
 
@@ -117,7 +108,7 @@ document.addEventListener('DOMContentLoaded', function() {
         try {
             // ========== PETICIÓN AJAX AL BACKEND ==========
             // Realiza una petición HTTP POST al archivo auth.php en Backend/api/
-            const response = await fetch('../Backend/api/auth.php', {
+            const response = await fetch('Backend/api/auth.php', {
                 method: 'POST', // Método HTTP POST
                 headers: {
                     'Content-Type': 'application/json' // Indica que enviamos datos JSON
@@ -171,10 +162,10 @@ function redirectToDashboard(rol) {
         // Redirige según el rol del usuario recibido de la base de datos
         if (rol === 'administrativo') {
             // Redirige a dashboard de administrador (archivo HTML que debe existir)
-            window.location.replace('pages/dashboard_admin.html');
+            window.location.replace('Frontend/pages/dashboard_admin.html');
         } else if (rol === 'docente') {
             // Redirige a dashboard de docente (archivo PHP que debe existir)
-            window.location.replace('pages/dashboard_usuario.php');
+            window.location.replace('Frontend/pages/dashboard_usuario.php');
         }
         // Nota: usa replace() en lugar de href para evitar que el usuario regrese con botón atrás
     }, 100); // Espera 100ms
@@ -192,40 +183,6 @@ function mostrarError(mensaje) {
     setTimeout(() => {
         errorMessage.style.display = 'none'; // Oculta el div de error
     }, 3000); // 3000ms = 3 segundos
-}
-
-// ========== FUNCIÓN PARA MOSTRAR OPCIONES CUANDO HAY SESIÓN ACTIVA ==========
-function mostrarOpcionSesionActiva(userData) {
-    const container = document.querySelector('.card-body');
-    container.innerHTML = `
-        <div class="text-center mb-4">
-            <div class="bg-success rounded-3 d-inline-flex p-3 mb-3">
-                <i class="bi bi-person-check text-white fs-1"></i>
-            </div>
-            <h6 class="text-muted fw-bold mb-0">SESIÓN ACTIVA</h6>
-        </div>
-        
-        <div class="text-center mb-4">
-            <h4 class="fw-bold text-dark mb-2">¡Hola ${userData.nombre}!</h4>
-            <p class="text-muted">Ya tienes una sesión activa</p>
-            <p class="text-primary fw-semibold">${userData.email}</p>
-        </div>
-        
-        <div class="d-grid gap-3">
-            <button onclick="redirectToDashboard('${userData.rol}')" class="btn btn-primary btn-lg rounded-3 fw-semibold">
-                <i class="bi bi-box-arrow-right me-2"></i>Continuar al Dashboard
-            </button>
-            <button onclick="cerrarSesion()" class="btn btn-outline-danger btn-lg rounded-3 fw-semibold">
-                <i class="bi bi-box-arrow-left me-2"></i>Cerrar Sesión
-            </button>
-        </div>
-    `;
-}
-
-// ========== FUNCIÓN PARA CERRAR SESIÓN ==========
-function cerrarSesion() {
-    localStorage.removeItem('userData');
-    location.reload();
 }
     </script>
 </body>
