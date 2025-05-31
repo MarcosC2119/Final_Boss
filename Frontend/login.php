@@ -30,14 +30,14 @@
                         </div>
                         
                         <!-- Formulario de login -->
-                        <form method="POST" action="">
+                        <form method="POST" action="" id="login-form">
                             <!-- Campo de correo electrónico -->
                             <div class="mb-3">
                                 <label class="form-label text-dark fw-semibold">
                                     <i class="bi bi-envelope me-2"></i>Correo Electrónico
                                 </label>
                                 <input type="email" class="form-control form-control-lg rounded-3 border-2" 
-                                       name="email" placeholder="ejemplo@institucion.edu" required>
+                                       name="email" id="email" placeholder="ejemplo@institucion.edu" required>
                             </div>
                             
                             <!-- Campo de contraseña -->
@@ -46,7 +46,7 @@
                                     <i class="bi bi-lock me-2"></i>Contraseña
                                 </label>
                                 <input type="password" class="form-control form-control-lg rounded-3 border-2" 
-                                       name="password" placeholder="Ingrese su contraseña" required>
+                                       name="password" id="password" placeholder="Ingrese su contraseña" required>
                             </div>
                             
                             <!-- Botón de iniciar sesión -->
@@ -63,6 +63,9 @@
                                 </a>
                             </div>
                         </form>
+                        
+                        <!-- Después del formulario -->
+                        <div id="error-message" class="alert alert-danger mt-3" style="display: none;"></div>
                     </div>
                 </div>
             </div>
@@ -73,77 +76,114 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
     <script>
         
- document.addEventListener('DOMContentLoaded', function() {
-    // Si ya hay una sesión activa, redirigir al dashboard correspondiente
+// ========== FUNCIÓN PRINCIPAL QUE SE EJECUTA CUANDO CARGA LA PÁGINA ==========
+document.addEventListener('DOMContentLoaded', function() {
+    // Este event listener se ejecuta cuando el DOM está completamente cargado
+    
+    // ========== VERIFICACIÓN DE SESIÓN ACTIVA ==========
+    // Revisa si ya hay datos de usuario guardados en localStorage del navegador
     const userData = JSON.parse(localStorage.getItem('userData'));
     if (userData && userData.rol) {
-        redirectToDashboard(userData.rol);
-        return;
+        // Si existe una sesión activa, redirige automáticamente al dashboard correspondiente
+        redirectToDashboard(userData.rol); // Llama a la función definida más abajo (línea 137)
+        return; // Sale de la función para evitar configurar el formulario
     }
 
-    const loginForm = document.getElementById('login-form');
-    const errorMessage = document.getElementById('error-message');
+    // ========== OBTENCIÓN DE ELEMENTOS DEL DOM ==========
+    // Obtiene referencias a los elementos HTML necesarios
+    const loginForm = document.getElementById('login-form'); // Formulario HTML (línea 30)
+    const errorMessage = document.getElementById('error-message'); // Div para mostrar errores (línea 59)
     
+    // ========== CONFIGURACIÓN DEL EVENT LISTENER DEL FORMULARIO ==========
     loginForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
+        // Este event listener se ejecuta cuando el usuario envía el formulario (click en botón o Enter)
         
-        const email = document.getElementById('email').value;
-        const password = document.getElementById('password').value;
+        e.preventDefault(); // Previene el envío tradicional del formulario (sin AJAX)
+        
+        // ========== OBTENCIÓN DE DATOS DEL FORMULARIO ==========
+        // Obtiene los valores de los campos de entrada del HTML
+        const email = document.getElementById('email').value; // Campo email (línea 38)
+        const password = document.getElementById('password').value; // Campo password (línea 46)
         
         try {
-            const response = await fetch('api/auth.php', {
-                method: 'POST',
+            // ========== PETICIÓN AJAX AL BACKEND ==========
+            // Realiza una petición HTTP POST al archivo auth.php en Backend/api/
+            const response = await fetch('../Backend/api/auth.php', {
+                method: 'POST', // Método HTTP POST
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json' // Indica que enviamos datos JSON
                 },
+                // Convierte los datos JavaScript a formato JSON para enviar al servidor
                 body: JSON.stringify({ email, password })
             });
             
+            // ========== PROCESAMIENTO DE LA RESPUESTA ==========
+            // Convierte la respuesta del servidor de JSON a objeto JavaScript
             const data = await response.json();
             
+            // ========== VERIFICACIÓN DE ÉXITO EN LA AUTENTICACIÓN ==========
             if (data.success) {
-                // Guardar datos del usuario en localStorage
+                // Si el login fue exitoso (respuesta de auth.php línea 48-58)
+                
+                // ========== ALMACENAMIENTO DE DATOS DE USUARIO ==========
+                // Crea objeto con los datos del usuario recibidos del servidor
                 const userData = {
-                    id: data.user.id,
-                    nombre: data.user.nombre,
-                    email: data.user.email,
-                    rol: data.user.rol,
-                    token: data.token
+                    id: data.user.id,           // ID del usuario desde la BD
+                    nombre: data.user.nombre,   // Nombre del usuario desde la BD
+                    email: data.user.email,     // Email del usuario desde la BD
+                    rol: data.user.rol,         // Rol del usuario desde la BD (administrativo/docente)
+                    token: data.token           // Token de sesión generado en auth.php
                 };
+                // Guarda los datos en localStorage del navegador para persistencia
                 localStorage.setItem('userData', JSON.stringify(userData));
                 
-                // Redirigir según el rol
-                redirectToDashboard(userData.rol);
+                // ========== REDIRECCIÓN SEGÚN ROL ==========
+                // Llama a función para redirigir según el rol del usuario
+                redirectToDashboard(userData.rol); // Función definida en línea 137
             } else {
-                mostrarError(data.error || 'Credenciales inválidas');
+                // Si el login falló (respuesta de auth.php línea 64-68)
+                // Muestra el mensaje de error recibido del servidor
+                mostrarError(data.error || 'Credenciales inválidas'); // Función definida en línea 148
             }
         } catch (error) {
-            console.error('Error:', error);
-            mostrarError('Error al iniciar sesión. Por favor, intente nuevamente.');
+            // ========== MANEJO DE ERRORES DE CONEXIÓN ==========
+            // Se ejecuta si hay problemas de red, servidor caído, etc.
+            console.error('Error:', error); // Log para debugging
+            mostrarError('Error al iniciar sesión. Por favor, intente nuevamente.'); // Función definida en línea 148
         }
     });
 });
 
+// ========== FUNCIÓN DE REDIRECCIÓN SEGÚN ROL ==========
+// Esta función se llama desde: línea 78 (sesión activa) y línea 123 (login exitoso)
 function redirectToDashboard(rol) {
-    // Pequeña pausa para asegurar que localStorage se haya actualizado
+    // Pequeña pausa para asegurar que localStorage se haya actualizado correctamente
     setTimeout(() => {
+        // Redirige según el rol del usuario recibido de la base de datos
         if (rol === 'administrativo') {
+            // Redirige a dashboard de administrador (archivo HTML que debe existir)
             window.location.replace('dashboard-admin.html');
         } else if (rol === 'docente') {
+            // Redirige a dashboard de docente (archivo HTML que debe existir)
             window.location.replace('dashboard-docente.html');
         }
-    }, 100);
+        // Nota: usa replace() en lugar de href para evitar que el usuario regrese con botón atrás
+    }, 100); // Espera 100ms
 }
 
+// ========== FUNCIÓN PARA MOSTRAR MENSAJES DE ERROR ==========
+// Esta función se llama desde: línea 125 (login fallido) y línea 129 (error de conexión)
 function mostrarError(mensaje) {
+    // Obtiene el elemento HTML donde mostrar el error (div línea 59)
     const errorMessage = document.getElementById('error-message');
-    errorMessage.textContent = mensaje;
-    errorMessage.style.display = 'block';
+    errorMessage.textContent = mensaje; // Establece el texto del mensaje
+    errorMessage.style.display = 'block'; // Hace visible el div de error
     
+    // Oculta automáticamente el mensaje después de 3 segundos
     setTimeout(() => {
-        errorMessage.style.display = 'none';
-    }, 3000);
+        errorMessage.style.display = 'none'; // Oculta el div de error
+    }, 3000); // 3000ms = 3 segundos
 }
-    <script>
+    </script>
 </body>
 </html>
