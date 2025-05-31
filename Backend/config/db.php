@@ -6,7 +6,7 @@ class Database {
     private $host = "localhost";
     private $username = "root";
     private $password = "";
-    private $database = "roomit";  // ✅ Corregido: ahora apunta a la BD correcta
+    private $database = "roomit";
     
     private function __construct() {
         try {
@@ -34,7 +34,7 @@ class Database {
     }
 }
 
-// Función para escribir logs (usada en auth.php)
+// Función para escribir logs
 function writeLog($message) {
     error_log("[" . date('Y-m-d H:i:s') . "] " . $message);
 }
