@@ -77,7 +77,7 @@
     <script>
         
 // ========== FUNCIÓN PRINCIPAL QUE SE EJECUTA CUANDO CARGA LA PÁGINA ==========
-document.addEventListener('DOMContentLoaded', function() {
+ document.addEventListener('DOMContentLoaded', function() {
     // Este event listener se ejecuta cuando el DOM está completamente cargado
     
     // ========== VERIFICAR SI SE SOLICITA LOGOUT ==========
