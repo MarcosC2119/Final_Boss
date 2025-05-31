@@ -93,17 +93,17 @@
                 <div class="col-md-4">
                     <button class="btn btn-custom-primary btn-lg w-100 rounded-3 py-3 fw-semibold">
                         <i class="bi bi-search me-2"></i>Revisar Salas
-                    </button>
+                </button>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-custom-primary btn-lg w-100 rounded-3 py-3 fw-semibold">
                         <i class="bi bi-plus-circle me-2"></i>Asignar Sala
-                    </button>
+                </button>
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-custom-primary btn-lg w-100 rounded-3 py-3 fw-semibold">
                         <i class="bi bi-qr-code me-2"></i>Ver QR
-                    </button>
+                </button>
                 </div>
             </div>
         </div>
@@ -156,7 +156,7 @@
                         <div class="card-body d-flex flex-column justify-content-between p-4">
                             <div>
                                 <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                                    <i class="bi bi-mortarboard fs-1 text-primary"></i>
+                                <i class="bi bi-mortarboard fs-1 text-primary"></i>
                                 </div>
                                 <h6 class="fw-bold text-primary mb-3">Capacitaciones</h6>
                                 <p class="text-muted small mb-4">

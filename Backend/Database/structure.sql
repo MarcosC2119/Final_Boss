@@ -133,3 +133,80 @@ AND r.fecha_reserva = '2024-01-15'
 AND r.estado = 'confirmada'
 ORDER BY r.hora_inicio;
 
+
+-- ========== PASO 1: Eliminar tablas en orden de dependencia ==========
+DROP TABLE IF EXISTS turno_registros;
+DROP TABLE IF EXISTS turno_asignaciones; 
+DROP TABLE IF EXISTS turnos;
+
+-- ========== PASO 2: Recrear tabla turnos SIN restricciones ==========
+CREATE TABLE turnos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    tipo ENUM('academico', 'laboral', 'servicio') NOT NULL,
+    hora_inicio TIME NOT NULL,
+    hora_fin TIME NOT NULL,
+    dias_semana JSON,
+    descripcion TEXT,
+    estado ENUM('activo', 'inactivo') DEFAULT 'activo',
+    color_hex VARCHAR(7) DEFAULT '#007bff',
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY unique_turno (nombre, tipo)
+);
+
+-- ========== PASO 3: Recrear turno_asignaciones ==========
+CREATE TABLE turno_asignaciones (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    turno_id INT NOT NULL,
+    usuario_id INT NOT NULL,
+    fecha_inicio DATE NOT NULL,
+    fecha_fin DATE NULL,
+    dias_especificos JSON NULL,
+    estado ENUM('activa', 'suspendida', 'finalizada') DEFAULT 'activa',
+    observaciones TEXT,
+    fecha_asignacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    asignado_por INT,
+    
+    FOREIGN KEY (turno_id) REFERENCES turnos(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE,
+    FOREIGN KEY (asignado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+    
+    INDEX idx_turno_usuario (turno_id, usuario_id),
+    INDEX idx_usuario_fecha (usuario_id, fecha_inicio, fecha_fin),
+    INDEX idx_turno_fecha (turno_id, fecha_inicio)
+);
+
+-- ========== PASO 4: Recrear turno_registros ==========
+CREATE TABLE turno_registros (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    asignacion_id INT NOT NULL,
+    fecha DATE NOT NULL,
+    hora_entrada TIME,
+    hora_salida TIME,
+    minutos_trabajados INT GENERATED ALWAYS AS (
+        CASE 
+            WHEN hora_entrada IS NOT NULL AND hora_salida IS NOT NULL 
+            THEN TIMESTAMPDIFF(MINUTE, 
+                CONCAT(fecha, ' ', hora_entrada), 
+                CONCAT(fecha, ' ', hora_salida))
+            ELSE NULL 
+        END
+    ) STORED,
+    estado ENUM('presente', 'ausente', 'tardanza', 'justificado') DEFAULT 'presente',
+    observaciones TEXT,
+    registrado_por INT,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    
+    FOREIGN KEY (asignacion_id) REFERENCES turno_asignaciones(id) ON DELETE CASCADE,
+    FOREIGN KEY (registrado_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+    
+    UNIQUE KEY unique_asignacion_fecha (asignacion_id, fecha),
+    INDEX idx_fecha_estado (fecha, estado)
+);
+
+-- ========== PASO 5: Insertar datos de prueba ==========
+INSERT INTO turnos (nombre, tipo, hora_inicio, hora_fin, dias_semana, descripcion, estado, color_hex) VALUES
+('Turno Mañana', 'academico', '08:00:00', '14:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Turno académico matutino', 'activo', '#28a745'),
+('Turno Tarde', 'academico', '14:00:00', '20:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Turno académico vespertino', 'activo', '#fd7e14'),
+('Guardia Nocturna', 'servicio', '22:00:00', '06:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Turno de seguridad nocturno', 'activo', '#6c757d'),
+('Turno Laboral', 'laboral', '09:00:00', '17:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Horario laboral estándar', 'activo', '#007bff');s
