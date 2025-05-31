@@ -15,52 +15,13 @@ CREATE TABLE usuarios (
     estado ENUM('activo', 'inactivo') DEFAULT 'activo'
 );
 
-CREATE TABLE salas (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    nombre VARCHAR(50) NOT NULL,
-    capacidad INT NOT NULL,
-    tipo ENUM('aula', 'laboratorio', 'auditorio') NOT NULL,
-    tiene_proyector BOOLEAN DEFAULT FALSE,
-    tiene_pizarra_digital BOOLEAN DEFAULT FALSE,
-    es_accesible BOOLEAN DEFAULT FALSE,
-    estado ENUM('disponible', 'ocupada', 'mantenimiento') DEFAULT 'disponible',
-    descripcion TEXT
-);
-
 CREATE TABLE reservas (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    sala_id INT NOT NULL,
+    id INT AUTO_INCREMENT PRIMARY KEY,
     usuario_id INT NOT NULL,
-    fecha DATE NOT NULL,
-    hora_inicio TIME NOT NULL,
-    duracion INT NOT NULL,
-    estado ENUM('activa', 'cancelada', 'finalizada') DEFAULT 'activa',
-    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    notas TEXT,
-    FOREIGN KEY (sala_id) REFERENCES salas(id),
-    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
-);
-
-CREATE TABLE horarios (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    sala_id INT NOT NULL,
-    dia_semana ENUM('Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo') NOT NULL,
-    hora_inicio TIME NOT NULL,
-    hora_fin TIME NOT NULL,
-    FOREIGN KEY (sala_id) REFERENCES salas(id)
-);
-
-CREATE TABLE mantenimiento (
-    id INT PRIMARY KEY AUTO_INCREMENT,
-    sala_id INT NOT NULL,
-    fecha_inicio DATETIME NOT NULL,
-    fecha_fin DATETIME NOT NULL,
+    fecha_reserva DATETIME NOT NULL,
+    estado ENUM('activa', 'completada', 'cancelada') DEFAULT 'activa',
     descripcion TEXT,
-    estado ENUM('programado', 'en_proceso', 'completado') DEFAULT 'programado',
-    FOREIGN KEY (sala_id) REFERENCES salas(id)
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_reservas_fecha ON reservas(fecha);
-CREATE INDEX idx_reservas_estado ON reservas(estado);
-CREATE INDEX idx_salas_estado ON salas(estado);
-CREATE INDEX idx_usuarios_email ON usuarios(email);
