@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Capacitaciones</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container py-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">Capacitaciones</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#capacitacionModal">
+                <i class="bi bi-plus-lg"></i> Nueva Capacitación
+            </button>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-bordered table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Descripción</th>
+                        <th>Tipo</th>
+                        <th>Fecha</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaCapacitaciones">
+                    <!-- Aquí se cargan las capacitaciones -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Modal Crear/Editar Capacitación -->
+    <div class="modal fade" id="capacitacionModal" tabindex="-1" aria-labelledby="modalTitle" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="capacitacionForm" enctype="multipart/form-data">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalTitle">Nueva Capacitación</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="capacitacionId" name="id">
+                        <div class="mb-3">
+                            <label for="titulo" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="titulo" name="titulo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea class="form-control" id="descripcion" name="descripcion" rows="2"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipoArchivo" class="form-label">Tipo de Archivo</label>
+                            <select class="form-select" id="tipoArchivo" name="tipo_archivo" required>
+                                <option value="PDF">PDF</option>
+                                <option value="WORD">WORD</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="archivo" class="form-label">Archivo (PDF o Word)</label>
+                            <input type="file" class="form-control" id="archivo" name="archivo" accept=".pdf,.doc,.docx" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" id="guardarCapacitacion">Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Confirmar Eliminación -->
+    <div class="modal fade" id="confirmarEliminarModal" tabindex="-1" aria-labelledby="confirmarEliminarLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmarEliminarLabel">Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    ¿Estás seguro de que deseas eliminar esta capacitación?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-danger" id="confirmarEliminar">Eliminar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Aquí va tu JS para llamar a los métodos PHP -->
+    <script>
+        // MostrarCapacitaciones: cargar y mostrar la tabla
+        function cargarCapacitaciones() {
+            fetch('ruta_a_tu_php/MostrarCapacitaciones.php')
+                .then(res => res.json())
+                .then(data => {
+                    const tbody = document.getElementById('tablaCapacitaciones');
+                    tbody.innerHTML = '';
+                    data.forEach(cap => {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${cap.id}</td>
+                                <td>${cap.titulo}</td>
+                                <td>${cap.descripcion}</td>
+                                <td>${cap.tipo_archivo}</td>
+                                <td>${cap.fecha_creacion}</td>
+                                <td>${cap.estado ? 'Activo' : 'Inactivo'}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="editarCapacitacion(${cap.id})"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-danger" onclick="mostrarModalEliminar(${cap.id})"><i class="bi bi-trash"></i></button>
+                                    <a href="${cap.archivo}" class="btn btn-sm btn-info" target="_blank"><i class="bi bi-file-earmark-arrow-down"></i></a>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+        }
+
+        // Crear o actualizar capacitación
+        document.getElementById('guardarCapacitacion').onclick = function() {
+            const form = document.getElementById('capacitacionForm');
+            const formData = new FormData(form);
+            const id = document.getElementById('capacitacionId').value;
+            let url = id ? 'ruta_a_tu_php/ActualizarCapacitaciones.php' : 'ruta_a_tu_php/CrearCapacitaciones.php';
+            if (id) formData.append('id', id);
+
+            fetch(url, {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => res.json())
+            .then(resp => {
+                if (resp.success) {
+                    cargarCapacitaciones();
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('capacitacionModal'));
+                    modal.hide();
+                    form.reset();
+                } else {
+                    alert('Error al guardar');
+                }
+            });
+        };
+
+        // Editar capacitación
+        function editarCapacitacion(id) {
+            fetch(`ruta_a_tu_php/MostrarCapacitaciones.php?id=${id}`)
+                .then(res => res.json())
+                .then(cap => {
+                    document.getElementById('modalTitle').innerText = 'Editar Capacitación';
+                    document.getElementById('capacitacionId').value = cap.id;
+                    document.getElementById('titulo').value = cap.titulo;
+                    document.getElementById('descripcion').value = cap.descripcion;
+                    document.getElementById('tipoArchivo').value = cap.tipo_archivo;
+                    // El archivo no se puede pre-cargar por seguridad
+                    var modal = new bootstrap.Modal(document.getElementById('capacitacionModal'));
+                    modal.show();
+                });
+        }
+
+        // Mostrar modal de eliminar
+        let idAEliminar = null;
+        function mostrarModalEliminar(id) {
+            idAEliminar = id;
+            var modal = new bootstrap.Modal(document.getElementById('confirmarEliminarModal'));
+            modal.show();
+        }
+
+        // Confirmar eliminación
+        document.getElementById('confirmarEliminar').onclick = function() {
+            fetch('ruta_a_tu_php/BorrarCapacitaciones.php', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `id=${idAEliminar}`
+            })
+            .then(res => res.json())
+            .then(resp => {
+                if (resp.success) {
+                    cargarCapacitaciones();
+                    var modal = bootstrap.Modal.getInstance(document.getElementById('confirmarEliminarModal'));
+                    modal.hide();
+                } else {
+                    alert('Error al eliminar');
+                }
+            });
+        };
+
+        // Reset modal al abrir para nueva capacitación
+        document.getElementById('capacitacionModal').addEventListener('show.bs.modal', function (event) {
+            document.getElementById('modalTitle').innerText = 'Nueva Capacitación';
+            document.getElementById('capacitacionForm').reset();
+            document.getElementById('capacitacionId').value = '';
+        });
+
+        // Inicializar tabla al cargar la página
+        window.onload = cargarCapacitaciones;
+    </script>
+</body>
+</html>
