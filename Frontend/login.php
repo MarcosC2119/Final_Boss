@@ -71,5 +71,79 @@
     
     <!-- Bootstrap 5.33 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script>
+        
+ document.addEventListener('DOMContentLoaded', function() {
+    // Si ya hay una sesión activa, redirigir al dashboard correspondiente
+    const userData = JSON.parse(localStorage.getItem('userData'));
+    if (userData && userData.rol) {
+        redirectToDashboard(userData.rol);
+        return;
+    }
+
+    const loginForm = document.getElementById('login-form');
+    const errorMessage = document.getElementById('error-message');
+    
+    loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        
+        try {
+            const response = await fetch('api/auth.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ email, password })
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                // Guardar datos del usuario en localStorage
+                const userData = {
+                    id: data.user.id,
+                    nombre: data.user.nombre,
+                    email: data.user.email,
+                    rol: data.user.rol,
+                    token: data.token
+                };
+                localStorage.setItem('userData', JSON.stringify(userData));
+                
+                // Redirigir según el rol
+                redirectToDashboard(userData.rol);
+            } else {
+                mostrarError(data.error || 'Credenciales inválidas');
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            mostrarError('Error al iniciar sesión. Por favor, intente nuevamente.');
+        }
+    });
+});
+
+function redirectToDashboard(rol) {
+    // Pequeña pausa para asegurar que localStorage se haya actualizado
+    setTimeout(() => {
+        if (rol === 'administrativo') {
+            window.location.replace('dashboard-admin.html');
+        } else if (rol === 'docente') {
+            window.location.replace('dashboard-docente.html');
+        }
+    }, 100);
+}
+
+function mostrarError(mensaje) {
+    const errorMessage = document.getElementById('error-message');
+    errorMessage.textContent = mensaje;
+    errorMessage.style.display = 'block';
+    
+    setTimeout(() => {
+        errorMessage.style.display = 'none';
+    }, 3000);
+}
+    <script>
 </body>
 </html>
