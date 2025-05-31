@@ -150,11 +150,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Se ejecuta si hay problemas de red, servidor caído, etc.
             console.error('Error:', error); // Log para debugging
             mostrarError('Error al iniciar sesión. Por favor, intente nuevamente.'); // Función definida en línea 148
-        }
-    });
-});
-
-// ========== FUNCIÓN DE REDIRECCIÓN SEGÚN ROL ==========
+  ========== FUNCIÓN DE REDIRECCIÓN SEGÚN ROL ==========
 // Esta función se llama desde: línea 78 (sesión activa) y línea 123 (login exitoso)
 function redirectToDashboard(rol) {
     // Pequeña pausa para asegurar que localStorage se haya actualizado correctamente
@@ -168,7 +164,11 @@ function redirectToDashboard(rol) {
             window.location.replace('dashboard-docente.html');
         }
         // Nota: usa replace() en lugar de href para evitar que el usuario regrese con botón atrás
-    }, 100); // Espera 100ms
+    }, 100); // Espera 100ms       }
+    });
+});
+
+//
 }
 
 // ========== FUNCIÓN PARA MOSTRAR MENSAJES DE ERROR ==========
