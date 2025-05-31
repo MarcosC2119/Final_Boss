@@ -209,4 +209,16 @@ INSERT INTO turnos (nombre, tipo, hora_inicio, hora_fin, dias_semana, descripcio
 ('Turno Mañana', 'academico', '08:00:00', '14:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Turno académico matutino', 'activo', '#28a745'),
 ('Turno Tarde', 'academico', '14:00:00', '20:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Turno académico vespertino', 'activo', '#fd7e14'),
 ('Guardia Nocturna', 'servicio', '22:00:00', '06:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Turno de seguridad nocturno', 'activo', '#6c757d'),
-('Turno Laboral', 'laboral', '09:00:00', '17:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Horario laboral estándar', 'activo', '#007bff');s
+('Turno Laboral', 'laboral', '09:00:00', '17:00:00', '["lunes", "martes", "miercoles", "jueves", "viernes"]', 'Horario laboral estándar', 'activo', '#007bff');
+
+CREATE TABLE Capacitaciones (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    titulo VARCHAR(255) NOT NULL,
+    descripcion TEXT,
+    archivo_nombre VARCHAR(255) NOT NULL,
+    archivo_tipo ENUM('PDF', 'WORD') NOT NULL,
+    archivo_contenido LONGBLOB NOT NULL,  -- Aquí se guarda el archivo
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    estado BOOLEAN DEFAULT TRUE
+);
