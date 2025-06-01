@@ -518,6 +518,22 @@
             }
 
             const formData = new FormData(this);
+
+            // ✅ DEBUGGING DEL FRONTEND
+            const capacitacionId = document.getElementById('capacitacionId').value;
+            console.log('🔍 DEBUG FRONTEND:', {
+                'ID del formulario': capacitacionId,
+                'Es edición': capacitacionId !== '',
+                'FormData ID': formData.get('id'),
+                'Título': formData.get('titulo')
+            });
+
+            // ✅ ASEGURAR QUE EL ID SE ENVÍA CORRECTAMENTE
+            if (capacitacionId && capacitacionId !== '') {
+                formData.set('id', capacitacionId);
+                console.log('✅ ID establecido en FormData:', formData.get('id'));
+            }
+
             const btnGuardar = document.getElementById('guardarCapacitacion');
             
             // Deshabilitar el botón y mostrar spinner
@@ -543,8 +559,11 @@
                 return data;
             })
             .then(resp => {
+                console.log('🎯 Respuesta del servidor:', resp);
                 if (resp.success) {
+                    const isEdit = document.getElementById('capacitacionId').value !== '';
                     mostrarToast('success', resp.mensaje);
+                    console.log(`✅ ${isEdit ? 'Actualización' : 'Creación'} exitosa`);
                     cargarCapacitaciones();
                     const modal = bootstrap.Modal.getInstance(document.getElementById('capacitacionModal'));
                     modal.hide();
@@ -708,11 +727,15 @@
         }
 
         function editarCapacitacion(id) {
+            console.log('🔧 Editando capacitación ID:', id);
+            
             fetch(`${PHP_ENDPOINT}?id=${id}`)
                 .then(res => res.json())
                 .then(cap => {
                     if (cap && cap.length > 0) {
                         cap = cap[0];
+                        console.log('📄 Datos obtenidos:', cap);
+                        
                         document.getElementById('modalTitle').innerHTML = '<i class="bi bi-pencil me-2"></i>Editar Capacitación';
                         document.getElementById('capacitacionId').value = cap.id;
                         document.getElementById('titulo').value = cap.titulo;
@@ -720,6 +743,9 @@
                         document.getElementById('tipoArchivo').value = cap.archivo_tipo;
                         document.getElementById('estado').value = cap.estado ? '1' : '0';
                         document.getElementById('archivo').required = false;
+                        
+                        console.log('✅ ID establecido en el campo:', document.getElementById('capacitacionId').value);
+                        
                         var modal = new bootstrap.Modal(document.getElementById('capacitacionModal'));
                         modal.show();
                     } else {

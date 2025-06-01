@@ -91,7 +91,7 @@ try {
             } else {
                 // Listar todas las capacitaciones (sin el contenido de los archivos)
                 $sql = "SELECT id, titulo, descripcion, archivo_nombre, archivo_tipo, fecha_creacion, fecha_actualizacion, estado 
-                        FROM Capacitaciones WHERE estado = 1 ORDER BY fecha_creacion DESC";
+                        FROM Capacitaciones ORDER BY fecha_creacion DESC";
                 $result = $conn->query($sql);
                 $capacitaciones = [];
                 while ($row = $result->fetch_assoc()) {
@@ -110,7 +110,16 @@ try {
             $descripcion = trim($_POST['descripcion'] ?? '');
             $archivo_tipo = $_POST['tipo_archivo'] ?? '';
             $estado = isset($_POST['estado']) ? (int)$_POST['estado'] : 1;
-            $id = (isset($_POST['id']) && $_POST['id'] !== '') ? (int) $_POST['id'] : null;
+            $id = (isset($_POST['id']) && $_POST['id'] !== '' && $_POST['id'] !== '0') ? (int) $_POST['id'] : null;
+
+            // ✅ DEBUGGING CRÍTICO
+            logError("ID recibido para edición", [
+                'id_raw' => $_POST['id'] ?? 'no_set',
+                'id_processed' => $id,
+                'id_type' => gettype($id),
+                'is_edit' => $id !== null ? 'YES' : 'NO',
+                'titulo' => $titulo
+            ]);
 
             // Validaciones básicas
             if (empty($titulo)) {
@@ -218,20 +227,36 @@ try {
             }
 
             if ($id) {
-                logError("Actualizando capacitación", ['id' => $id, 'titulo' => $titulo]);
+                logError("Entrando en modo ACTUALIZACIÓN", ['id' => $id, 'titulo' => $titulo]);
+                
+                // ✅ VERIFICAR QUE EL REGISTRO EXISTE ANTES DE ACTUALIZAR
+                $check_sql = "SELECT id FROM Capacitaciones WHERE id = ?";
+                $check_stmt = $conn->prepare($check_sql);
+                $check_stmt->bind_param("i", $id);
+                $check_stmt->execute();
+                $exists = $check_stmt->get_result()->num_rows > 0;
+                
+                if (!$exists) {
+                    throw new Exception("No se encontró la capacitación con ID: $id");
+                }
+                
+                logError("Capacitación encontrada, procediendo con actualización", ['id' => $id]);
+                
                 // Actualizar capacitación
                 if (isset($archivo_contenido)) {
+                    logError("Actualizando CON archivo nuevo", ['id' => $id]);
                     $sql = "UPDATE Capacitaciones SET titulo = ?, descripcion = ?, archivo_nombre = ?, 
-                            archivo_tipo = ?, archivo_contenido = ?, estado = ? WHERE id = ?";
+                            archivo_tipo = ?, archivo_contenido = ?, estado = ?, fecha_actualizacion = NOW() WHERE id = ?";
                     $stmt = $conn->prepare($sql);
                     if (!$stmt) {
                         throw new Exception('Error al preparar la consulta: ' . $conn->error);
                     }
-                    $stmt->bind_param("sssssii", $titulo, $descripcion, $archivo_nombre, 
+                    $stmt->bind_param("ssssbie", $titulo, $descripcion, $archivo_nombre, 
                                     $archivo_tipo, $archivo_contenido, $estado, $id);
                 } else {
+                    logError("Actualizando SIN archivo nuevo", ['id' => $id]);
                     $sql = "UPDATE Capacitaciones SET titulo = ?, descripcion = ?, archivo_tipo = ?, 
-                            estado = ? WHERE id = ?";
+                            estado = ?, fecha_actualizacion = NOW() WHERE id = ?";
                     $stmt = $conn->prepare($sql);
                     if (!$stmt) {
                         throw new Exception('Error al preparar la consulta: ' . $conn->error);
@@ -240,7 +265,7 @@ try {
                 }
                 $mensaje = "Capacitación actualizada correctamente";
             } else {
-                logError("Creando nueva capacitación", ['titulo' => $titulo]);
+                logError("Entrando en modo CREACIÓN", ['titulo' => $titulo]);
                 // Crear nueva capacitación
                 $sql = "INSERT INTO Capacitaciones (titulo, descripcion, archivo_nombre, archivo_tipo, 
                         archivo_contenido, estado) VALUES (?, ?, ?, ?, ?, ?)";
@@ -248,13 +273,27 @@ try {
                 if (!$stmt) {
                     throw new Exception('Error al preparar la consulta: ' . $conn->error);
                 }
-                $stmt->bind_param("sssssi", $titulo, $descripcion, $archivo_nombre, 
+                $stmt->bind_param("ssssbi", $titulo, $descripcion, $archivo_nombre, 
                                 $archivo_tipo, $archivo_contenido, $estado);
                 $mensaje = "Capacitación creada correctamente";
             }
 
+            // ✅ EJECUTAR Y VERIFICAR RESULTADO
             if (!$stmt->execute()) {
+                logError("Error al ejecutar consulta", ['error' => $stmt->error, 'query' => $sql]);
                 throw new Exception('Error al ejecutar la consulta: ' . $stmt->error);
+            }
+
+            // ✅ VERIFICAR FILAS AFECTADAS
+            $rows_affected = $stmt->affected_rows;
+            logError("Consulta ejecutada", [
+                'rows_affected' => $rows_affected,
+                'is_update' => $id !== null,
+                'mensaje' => $mensaje
+            ]);
+
+            if ($id && $rows_affected === 0) {
+                throw new Exception("No se pudo actualizar la capacitación. Es posible que no exista o no haya cambios.");
             }
 
             echo json_encode(['success' => true, 'mensaje' => $mensaje]);
@@ -281,7 +320,7 @@ try {
                 }
                 
                 // Marcar como inactivo
-                $sql = "UPDATE Capacitaciones SET estado = 0 WHERE id = ?";
+                $sql = "DELETE FROM Capacitaciones WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("i", $id);
                 
