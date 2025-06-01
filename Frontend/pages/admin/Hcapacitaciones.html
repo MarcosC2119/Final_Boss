@@ -59,18 +59,27 @@
                         <div class="mb-3">
                             <label for="tipoArchivo" class="form-label">Tipo de Archivo</label>
                             <select class="form-select" id="tipoArchivo" name="tipo_archivo" required>
+                                <option value="">Seleccione un tipo</option>
                                 <option value="PDF">PDF</option>
                                 <option value="WORD">WORD</option>
                             </select>
                         </div>
                         <div class="mb-3">
                             <label for="archivo" class="form-label">Archivo (PDF o Word)</label>
-                            <input type="file" class="form-control" id="archivo" name="archivo" accept=".pdf,.doc,.docx" required>
+                            <input type="file" class="form-control" id="archivo" name="archivo" accept=".pdf,.doc,.docx">
+                            <small class="text-muted">Solo se requiere para nuevas capacitaciones. Para editar, deja vacío para mantener el archivo actual.</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="estado" class="form-label">Estado</label>
+                            <select class="form-select" id="estado" name="estado" required>
+                                <option value="1">Activo</option>
+                                <option value="0">Inactivo</option>
+                            </select>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" id="guardarCapacitacion">Guardar</button>
+                        <button type="submit" class="btn btn-primary" id="guardarCapacitacion">Guardar</button>
                     </div>
                 </form>
             </div>
@@ -103,25 +112,164 @@
         // Cambia esta ruta si tu estructura es diferente
         const PHP_ENDPOINT = '/REPO-Prototipado/Backend/CRUD-admin/crud-capacitaciones.php';
 
+        // Función para validar el archivo antes de subir
+        function validarArchivo(file) {
+            const tipoArchivo = document.getElementById('tipoArchivo').value;
+            const extension = file.name.split('.').pop().toUpperCase();
+            
+            if (tipoArchivo === 'PDF' && extension !== 'PDF') {
+                alert('El archivo debe ser PDF');
+                return false;
+            }
+            if (tipoArchivo === 'WORD' && !['DOC', 'DOCX'].includes(extension)) {
+                alert('El archivo debe ser DOC o DOCX');
+                return false;
+            }
+
+            // Validar tamaño (10MB)
+            if (file.size > 10 * 1024 * 1024) {
+                alert('El archivo es demasiado grande. Máximo permitido: 10MB');
+                return false;
+            }
+
+            return true;
+        }
+
+        // Función para validar el formulario
+        function validarFormulario() {
+            const titulo = document.getElementById('titulo').value.trim();
+            const tipoArchivo = document.getElementById('tipoArchivo').value;
+            const archivo = document.getElementById('archivo').files[0];
+            const id = document.getElementById('capacitacionId').value;
+
+            if (!titulo) {
+                alert('El título es requerido');
+                return false;
+            }
+
+            if (!tipoArchivo) {
+                alert('Debe seleccionar un tipo de archivo');
+                return false;
+            }
+
+            if (!id && !archivo) {
+                alert('Debe seleccionar un archivo para crear una nueva capacitación');
+                return false;
+            }
+
+            if (archivo && !validarArchivo(archivo)) {
+                return false;
+            }
+
+            return true;
+        }
+
+        // Manejar el envío del formulario
+        document.getElementById('capacitacionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!validarFormulario()) {
+                return;
+            }
+
+            const formData = new FormData(this);
+            const btnGuardar = document.getElementById('guardarCapacitacion');
+            
+            // Deshabilitar el botón y mostrar spinner
+            btnGuardar.disabled = true;
+            btnGuardar.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Guardando...';
+
+            // Log de los datos que se envían
+            console.log('Enviando datos:', {
+                titulo: formData.get('titulo'),
+                tipo_archivo: formData.get('tipo_archivo'),
+                estado: formData.get('estado'),
+                tieneArchivo: formData.get('archivo') ? 'Sí' : 'No'
+            });
+
+            fetch(PHP_ENDPOINT, {
+                method: 'POST',
+                body: formData
+            })
+            .then(async response => {
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    throw new Error('La respuesta del servidor no es JSON válido');
+                }
+
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error en la respuesta del servidor');
+                }
+                
+                return data;
+            })
+            .then(resp => {
+                if (resp.success) {
+                    alert(resp.mensaje);
+                    cargarCapacitaciones();
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('capacitacionModal'));
+                    modal.hide();
+                    this.reset();
+                } else {
+                    throw new Error(resp.error || 'Error desconocido');
+                }
+            })
+            .catch(err => {
+                console.error('Error completo:', err);
+                alert('Error al guardar: ' + err.message);
+            })
+            .finally(() => {
+                // Restaurar el botón
+                btnGuardar.disabled = false;
+                btnGuardar.innerHTML = 'Guardar';
+            });
+        });
+
         function cargarCapacitaciones() {
+            // Mostrar indicador de carga
+            const tbody = document.getElementById('tablaCapacitaciones');
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Cargando...</span></div></td></tr>';
+
             fetch(PHP_ENDPOINT)
                 .then(res => res.json())
                 .then(data => {
-                    const tbody = document.getElementById('tablaCapacitaciones');
                     tbody.innerHTML = '';
+                    if (data.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="7" class="text-center">No hay capacitaciones registradas</td></tr>';
+                        return;
+                    }
                     data.forEach(cap => {
+                        const fecha = new Date(cap.fecha_creacion).toLocaleDateString('es-ES', {
+                            year: 'numeric',
+                            month: '2-digit',
+                            day: '2-digit',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
                         tbody.innerHTML += `
                             <tr>
                                 <td>${cap.id}</td>
                                 <td>${cap.titulo}</td>
-                                <td>${cap.descripcion}</td>
-                                <td>${cap.tipo_archivo}</td>
-                                <td>${cap.fecha_creacion ?? ''}</td>
-                                <td>${cap.estado == 1 ? 'Activo' : 'Inactivo'}</td>
+                                <td>${cap.descripcion || ''}</td>
+                                <td>${cap.archivo_tipo}</td>
+                                <td>${fecha}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-warning" onclick="editarCapacitacion(${cap.id})"><i class="bi bi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-danger" onclick="mostrarModalEliminar(${cap.id})"><i class="bi bi-trash"></i></button>
-                                    <a href="${cap.archivo}" class="btn btn-sm btn-info" target="_blank"><i class="bi bi-file-earmark-arrow-down"></i></a>
+                                    <span class="badge ${cap.estado ? 'bg-success' : 'bg-danger'}">
+                                        ${cap.estado ? 'Activo' : 'Inactivo'}
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-warning" onclick="editarCapacitacion(${cap.id})" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="mostrarModalEliminar(${cap.id})" title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-info" onclick="descargarArchivo(${cap.id})" title="Descargar">
+                                        <i class="bi bi-file-earmark-arrow-down"></i>
+                                    </button>
                                 </td>
                             </tr>
                         `;
@@ -129,38 +277,45 @@
                 })
                 .catch(err => {
                     console.error('Error al cargar capacitaciones:', err);
-                    alert('Error al cargar capacitaciones. Revisa la consola para más detalles.');
+                    tbody.innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error al cargar las capacitaciones</td></tr>';
                 });
         }
 
-        document.getElementById('guardarCapacitacion').onclick = function() {
-            const form = document.getElementById('capacitacionForm');
-            const formData = new FormData(form);
-            const id = document.getElementById('capacitacionId').value;
-            let url = PHP_ENDPOINT;
-            if (id) formData.append('id', id);
+        function descargarArchivo(id) {
+            // Mostrar indicador de carga
+            const btn = event.target.closest('button');
+            const originalHTML = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
 
-            fetch(url, {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(resp => {
-                if (resp.success) {
-                    cargarCapacitaciones();
-                    var modal = bootstrap.Modal.getInstance(document.getElementById('capacitacionModal'));
-                    modal.hide();
-                    form.reset();
-                } else {
-                    console.error('Error al guardar:', resp.error);
-                    alert('Error al guardar: ' + (resp.error || 'Error desconocido.'));
-                }
-            })
-            .catch(err => {
-                console.error('Error en la petición fetch:', err);
-                alert('Error en la petición. Revisa la consola para más detalles.');
-            });
-        };
+            fetch(`${PHP_ENDPOINT}?id=${id}&download=1`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error al descargar el archivo');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    // Crear URL del blob y descargar
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = ''; // El nombre del archivo vendrá del servidor
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    a.remove();
+                })
+                .catch(err => {
+                    console.error('Error:', err);
+                    alert('Error al descargar el archivo. Por favor, intenta nuevamente.');
+                })
+                .finally(() => {
+                    // Restaurar botón
+                    btn.disabled = false;
+                    btn.innerHTML = originalHTML;
+                });
+        }
 
         function editarCapacitacion(id) {
             fetch(`${PHP_ENDPOINT}?id=${id}`)
@@ -171,8 +326,10 @@
                         document.getElementById('modalTitle').innerText = 'Editar Capacitación';
                         document.getElementById('capacitacionId').value = cap.id;
                         document.getElementById('titulo').value = cap.titulo;
-                        document.getElementById('descripcion').value = cap.descripcion;
-                        document.getElementById('tipoArchivo').value = cap.tipo_archivo;
+                        document.getElementById('descripcion').value = cap.descripcion || '';
+                        document.getElementById('tipoArchivo').value = cap.archivo_tipo;
+                        document.getElementById('estado').value = cap.estado ? '1' : '0';
+                        document.getElementById('archivo').required = false; // No requerido en edición
                         var modal = new bootstrap.Modal(document.getElementById('capacitacionModal'));
                         modal.show();
                     } else {
@@ -215,10 +372,20 @@
             });
         };
 
+        // Modificar el evento del modal para resetear el formulario
         document.getElementById('capacitacionModal').addEventListener('show.bs.modal', function (event) {
-            document.getElementById('modalTitle').innerText = 'Nueva Capacitación';
-            document.getElementById('capacitacionForm').reset();
+            const form = document.getElementById('capacitacionForm');
+            const btnGuardar = document.getElementById('guardarCapacitacion');
+            
+            // Resetear el formulario
+            form.reset();
             document.getElementById('capacitacionId').value = '';
+            document.getElementById('modalTitle').innerText = 'Nueva Capacitación';
+            document.getElementById('estado').value = '1';
+            
+            // Restaurar el botón guardar
+            btnGuardar.disabled = false;
+            btnGuardar.innerHTML = 'Guardar';
         });
 
         window.onload = cargarCapacitaciones;
