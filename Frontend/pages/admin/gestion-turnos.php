@@ -561,7 +561,7 @@ session_start();
                     ...filtrosActivos
                 });
 
-                const response = await fetch(`/Final_Boss/Backend/api/Turnos/Metodos-turnos.php?${params}`);
+                const response = await fetch(`../../../Backend/api/Turnos/Metodos-turnos.php?${params}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
@@ -714,7 +714,7 @@ session_start();
 
                 mostrarLoadingBoton('btnGuardarTurno', true);
 
-                const response = await fetch('/Final_Boss/Backend/api/Turnos/Metodos-turnos.php', {
+                const response = await fetch('../../../Backend/api/Turnos/Metodos-turnos.php', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -800,7 +800,7 @@ session_start();
 
                 mostrarLoadingBoton('btnActualizarTurno', true);
 
-                const response = await fetch('/Final_Boss/Backend/api/Turnos/Metodos-turnos.php', {
+                const response = await fetch('../../../Backend/api/Turnos/Metodos-turnos.php', {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',
@@ -843,7 +843,7 @@ session_start();
                 });
 
                 if (result.isConfirmed) {
-                    const response = await fetch('/Final_Boss/Backend/api/Turnos/Metodos-turnos.php', {
+                    const response = await fetch('../../../Backend/api/Turnos/Metodos-turnos.php', {
                         method: 'DELETE',
                         headers: {
                             'Content-Type': 'application/json',

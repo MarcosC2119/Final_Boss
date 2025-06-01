@@ -379,4 +379,4 @@ $pagina_actual = $_GET['page'] ?? 'dashboard';
         }
     </script>
 </body>
-</html>
+</html> 
