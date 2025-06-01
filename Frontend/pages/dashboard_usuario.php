@@ -216,15 +216,44 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
             </div>
         </div>
 
-        <!-- 5. MI SOPORTE TÉCNICO (NUEVA SECCIÓN) -->
+        <!-- 5. MI SOPORTE TÉCNICO (VERSIÓN MEJORADA) -->
         <div class="mb-5">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h5 class="fw-bold text-primary mb-0" style="letter-spacing: 0.5px;">
                     <i class="bi bi-headset me-2"></i>Mi Soporte Técnico
+                    <!-- ✅ NUEVO: Indicador de respuestas pendientes -->
+                    <span class="badge bg-danger ms-2" id="badge-respuestas-nuevas" style="display: none;">
+                        <i class="bi bi-exclamation-circle me-1"></i>
+                        <span id="count-respuestas-nuevas">0</span> respuestas nuevas
+                    </span>
                 </h5>
                 <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="nuevaSolicitudSoporte()">
                     <i class="bi bi-plus-circle me-1"></i>Nueva Solicitud
                 </button>
+            </div>
+
+            <!-- ✅ NUEVA SECCIÓN: Respuestas Pendientes -->
+            <div id="seccion-respuestas-pendientes" class="mb-4" style="display: none;">
+                <div class="alert alert-success border-0 rounded-4 shadow-sm">
+                    <div class="d-flex align-items-start">
+                        <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" 
+                             style="width: 50px; height: 50px; min-width: 50px;">
+                            <i class="bi bi-chat-dots-fill fs-4 text-success"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="fw-bold text-success mb-2">
+                                <i class="bi bi-bell me-2"></i>¡Tienes respuestas del soporte técnico!
+                            </h6>
+                            <p class="mb-2">El administrador ha respondido a tus solicitudes:</p>
+                            <div id="lista-respuestas-pendientes" class="mb-3">
+                                <!-- Se llenarán dinámicamente -->
+                            </div>
+                            <button class="btn btn-success btn-sm rounded-pill" onclick="verTodasRespuestas()">
+                                <i class="bi bi-eye me-1"></i>Ver Todas las Respuestas
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <!-- Estadísticas Rápidas de Soporte -->
@@ -305,7 +334,7 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
 
                     <!-- Lista de tickets -->
                     <div id="lista-mis-tickets">
-                        <!-- Los tickets se cargarán aquí dinámicamente -->
+                        <!-- Los tickets se cargarán aquí dinámicamente con mejor visualización de respuestas -->
                     </div>
 
                     <!-- Botón Ver Más (cuando hay más de 3 tickets) -->
@@ -435,11 +464,12 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
     <script>
-        // ========== VARIABLES GLOBALES CORREGIDAS ==========
+        // ========== VARIABLES GLOBALES MEJORADAS ==========
         const API_SOPORTE = '../../Backend/api/SoporteTecnico/Metodos-soporte.php';
         let misTickets = [];
-        let emailUsuario = '<?php echo $email_usuario; ?>'; // ✅ OBTENER EMAIL REAL DE PHP
+        let emailUsuario = '<?php echo $email_usuario; ?>';
         let mostrandoTodos = false;
+        let ticketsConRespuestasNuevas = []; // ✅ NUEVO
 
         // ========== CARGAR AL INICIALIZAR ==========
         document.addEventListener('DOMContentLoaded', function() {
@@ -447,7 +477,7 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
             cargarMisTickets();
         });
 
-        // ========== CARGAR MIS TICKETS CORREGIDO ==========
+        // ========== CARGAR MIS TICKETS MEJORADO ==========
         async function cargarMisTickets() {
             try {
                 document.getElementById('loading-soporte').style.display = 'block';
@@ -457,14 +487,10 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
 
                 console.log('🔍 Buscando tickets para:', emailUsuario);
 
-                // ✅ CONSULTA MEJORADA: Obtener TODOS los tickets
                 const response = await fetch(`${API_SOPORTE}`);
                 const data = await response.json();
 
-                console.log('📊 Respuesta del servidor:', data);
-
                 if (data.success && data.data && data.data.length > 0) {
-                    // ✅ FILTRAR CORRECTAMENTE por email del usuario
                     misTickets = data.data.filter(ticket => 
                         ticket.email_solicitante && 
                         ticket.email_solicitante.toLowerCase() === emailUsuario.toLowerCase()
@@ -473,35 +499,94 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                     console.log('🎫 Mis tickets filtrados:', misTickets);
 
                     if (misTickets.length > 0) {
+                        // ✅ DETECTAR RESPUESTAS NUEVAS
+                        detectarRespuestasNuevas(misTickets);
                         renderizarMisTickets(misTickets);
                         actualizarEstadisticasSoporte(misTickets);
                     } else {
-                        console.log('⚠️ No se encontraron tickets para este email');
                         mostrarSinTickets();
                     }
                 } else {
-                    console.log('📭 No hay tickets en el sistema');
                     mostrarSinTickets();
                 }
 
             } catch (error) {
                 console.error('❌ Error al cargar tickets:', error);
                 mostrarSinTickets();
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Error de Conexión',
-                    text: 'No se pudieron cargar tus solicitudes. Verifica tu conexión.',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000
-                });
             } finally {
                 document.getElementById('loading-soporte').style.display = 'none';
             }
         }
 
-        // ========== RENDERIZAR MIS TICKETS CORREGIDO ==========
+        // ========== DETECTAR RESPUESTAS NUEVAS ==========
+        function detectarRespuestasNuevas(tickets) {
+            // Filtrar tickets que tienen respuesta del admin
+            ticketsConRespuestasNuevas = tickets.filter(ticket => 
+                ticket.respuesta_admin && 
+                ticket.respuesta_admin.trim() !== '' &&
+                ticket.estado !== 'cerrado' // No mostrar cerrados
+            );
+
+            console.log('📩 Tickets con respuestas:', ticketsConRespuestasNuevas);
+
+            if (ticketsConRespuestasNuevas.length > 0) {
+                mostrarSeccionRespuestasPendientes(ticketsConRespuestasNuevas);
+            } else {
+                ocultarSeccionRespuestasPendientes();
+            }
+        }
+
+        // ========== MOSTRAR SECCIÓN DE RESPUESTAS PENDIENTES ==========
+        function mostrarSeccionRespuestasPendientes(ticketsConRespuestas) {
+            const seccion = document.getElementById('seccion-respuestas-pendientes');
+            const badge = document.getElementById('badge-respuestas-nuevas');
+            const count = document.getElementById('count-respuestas-nuevas');
+            const lista = document.getElementById('lista-respuestas-pendientes');
+
+            // Actualizar contador
+            count.textContent = ticketsConRespuestas.length;
+            badge.style.display = 'inline-block';
+
+            // Generar lista de respuestas
+            lista.innerHTML = ticketsConRespuestas.map(ticket => `
+                <div class="d-flex justify-content-between align-items-center p-2 mb-1 bg-white rounded-3">
+                    <div class="flex-grow-1">
+                        <small class="fw-semibold text-success">
+                            <i class="bi bi-ticket-detailed me-1"></i>
+                            Ticket #${ticket.id} - ${formatearTipo(ticket.tipo)}
+                        </small>
+                        <div class="text-muted small text-truncate" style="max-width: 400px;">
+                            ${ticket.respuesta_admin.substring(0, 100)}${ticket.respuesta_admin.length > 100 ? '...' : ''}
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-success btn-sm rounded-pill ms-2" onclick="verDetallesTicket(${ticket.id})">
+                        <i class="bi bi-eye me-1"></i>Leer
+                    </button>
+                </div>
+            `).join('');
+
+            seccion.style.display = 'block';
+        }
+
+        // ========== OCULTAR SECCIÓN DE RESPUESTAS ==========
+        function ocultarSeccionRespuestasPendientes() {
+            document.getElementById('seccion-respuestas-pendientes').style.display = 'none';
+            document.getElementById('badge-respuestas-nuevas').style.display = 'none';
+        }
+
+        // ========== VER TODAS LAS RESPUESTAS ==========
+        function verTodasRespuestas() {
+            mostrandoTodos = true;
+            renderizarMisTickets(misTickets);
+            
+            // Scroll a la lista de tickets
+            document.getElementById('lista-mis-tickets').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+
+        // ========== RENDERIZAR TICKETS MEJORADO ==========
         function renderizarMisTickets(tickets) {
             const container = document.getElementById('lista-mis-tickets');
             
@@ -510,20 +595,39 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                 return;
             }
 
-            // ✅ DECIDIR CUÁNTOS MOSTRAR
             const ticketsAMostrar = mostrandoTodos ? tickets : tickets.slice(0, 3);
             const hayMasTickets = tickets.length > 3;
 
-            // ✅ MOSTRAR INFORMACIÓN DEL TOTAL
             const infoTotal = hayMasTickets && !mostrandoTodos ? 
                 `<div class="alert alert-info alert-sm mb-3">
                     <i class="bi bi-info-circle me-2"></i>
                     Mostrando las 3 más recientes de <strong>${tickets.length} solicitudes</strong>
                 </div>` : '';
 
-            container.innerHTML = infoTotal + ticketsAMostrar.map((ticket, index) => `
-                <div class="card border-0 mb-3 shadow-sm rounded-3" style="border-left: 4px solid ${getColorEstado(ticket.estado)} !important;">
+            container.innerHTML = infoTotal + ticketsAMostrar.map(ticket => `
+                <div class="card border-0 mb-3 shadow-sm rounded-3 ${ticket.respuesta_admin ? 'border-success' : ''}" 
+                     style="border-left: 4px solid ${getColorEstado(ticket.estado)} !important; 
+                            ${ticket.respuesta_admin ? 'box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2) !important;' : ''}">
                     <div class="card-body p-3">
+                        <!-- ✅ NUEVA: Alerta de respuesta en la parte superior -->
+                        ${ticket.respuesta_admin ? `
+                            <div class="alert alert-success py-2 px-3 mb-3 border-0 rounded-3" 
+                                 style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-chat-quote-fill text-success fs-5 me-2"></i>
+                                    <div class="flex-grow-1">
+                                        <small class="fw-bold text-success">¡El administrador ha respondido!</small>
+                                        <div class="text-success small text-truncate" style="max-width: 300px;">
+                                            "${ticket.respuesta_admin.substring(0, 80)}${ticket.respuesta_admin.length > 80 ? '...' : ''}"
+                                        </div>
+                                    </div>
+                                    <button class="btn btn-success btn-sm rounded-pill" onclick="verDetallesTicket(${ticket.id})">
+                                        <i class="bi bi-eye me-1"></i>Leer Completa
+                                    </button>
+                                </div>
+                            </div>
+                        ` : ''}
+
                         <div class="row align-items-center">
                             <div class="col-md-8">
                                 <div class="d-flex align-items-start mb-2">
@@ -534,6 +638,7 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                                         <div class="d-flex justify-content-between align-items-start mb-1">
                                             <h6 class="mb-0 fw-semibold">
                                                 ${ticket.asunto || 'Solicitud de Soporte'}
+                                                ${ticket.respuesta_admin ? '<i class="bi bi-chat-quote-fill text-success ms-2" title="Respondido"></i>' : ''}
                                             </h6>
                                             <small class="text-muted">
                                                 <i class="bi bi-hash"></i>${ticket.id}
@@ -545,6 +650,7 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                                         <div class="d-flex gap-2 flex-wrap">
                                             ${getBadgeEstado(ticket.estado)}
                                             ${getBadgePrioridad(ticket.prioridad)}
+                                            ${ticket.respuesta_admin ? '<span class="badge bg-success"><i class="bi bi-reply me-1"></i>Respondido</span>' : ''}
                                             <small class="text-muted align-self-center">
                                                 <i class="bi bi-calendar-event me-1"></i>
                                                 ${formatearFecha(ticket.fecha_creacion)}
@@ -560,14 +666,15 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                                             <i class="bi bi-key me-1"></i>Ver Contraseña
                                         </button>
                                     ` : ''}
-                                    <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="verDetallesTicket(${ticket.id})">
-                                        <i class="bi bi-eye me-1"></i>Ver Detalles
-                                    </button>
                                     ${ticket.respuesta_admin ? `
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-reply me-1"></i>Respondido
-                                        </span>
-                                    ` : ''}
+                                        <button class="btn btn-success btn-sm rounded-pill" onclick="verDetallesTicket(${ticket.id})">
+                                            <i class="bi bi-chat-quote me-1"></i>Ver Respuesta
+                                        </button>
+                                    ` : `
+                                        <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="verDetallesTicket(${ticket.id})">
+                                            <i class="bi bi-eye me-1"></i>Ver Detalles
+                                        </button>
+                                    `}
                                 </div>
                             </div>
                         </div>
@@ -575,7 +682,6 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                 </div>
             `).join('');
 
-            // ✅ MOSTRAR/OCULTAR BOTÓN "VER MÁS"
             if (hayMasTickets) {
                 document.getElementById('boton-ver-mas').style.display = 'block';
                 actualizarBotonToggle();
@@ -696,7 +802,7 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
             const ticket = misTickets.find(t => t.id === ticketId);
             if (!ticket) return;
 
-            const headerColor = getColorEstado(ticket.estado);
+            const headerColor = ticket.respuesta_admin ? '#198754' : getColorEstado(ticket.estado);
             document.getElementById('headerModalTicket').style.background = `linear-gradient(135deg, ${headerColor}, ${headerColor}aa)`;
 
             document.getElementById('contenidoModalTicket').innerHTML = `
@@ -720,24 +826,44 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                         <div class="mb-3">
                             <strong>Fecha:</strong> ${formatearFecha(ticket.fecha_creacion)}
                         </div>
+                        ${ticket.fecha_respuesta ? `
+                            <div class="mb-3">
+                                <strong>Fecha respuesta:</strong> ${formatearFecha(ticket.fecha_respuesta)}
+                            </div>
+                        ` : ''}
                     </div>
                     <div class="col-md-6">
                         <h6 class="fw-bold text-primary mb-3">
-                            <i class="bi bi-chat-dots me-2"></i>Descripción
+                            <i class="bi bi-chat-dots me-2"></i>Tu Consulta
                         </h6>
                         <div class="bg-light rounded-3 p-3 mb-3">
                             ${ticket.motivo_solicitud}
                         </div>
+                        
                         ${ticket.respuesta_admin ? `
-                            <h6 class="fw-bold text-success mb-2">
-                                <i class="bi bi-reply me-2"></i>Respuesta del Administrador
-                            </h6>
-                            <div class="alert alert-success">
-                                ${ticket.respuesta_admin}
+                            <div class="alert alert-success border-0 rounded-4 shadow-sm mb-3">
+                                <h6 class="fw-bold text-success mb-3">
+                                    <i class="bi bi-chat-quote-fill me-2"></i>Respuesta del Administrador
+                                </h6>
+                                <div class="bg-white rounded-3 p-3 border border-success border-opacity-25">
+                                    ${ticket.respuesta_admin}
+                                </div>
+                                ${ticket.fecha_respuesta ? `
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        Respondido el ${formatearFecha(ticket.fecha_respuesta)}
+                                    </small>
+                                ` : ''}
                             </div>
-                        ` : ''}
+                        ` : `
+                            <div class="alert alert-info border-0 rounded-3">
+                                <i class="bi bi-clock me-2"></i>
+                                <strong>Estado:</strong> Tu solicitud está siendo revisada. Te notificaremos cuando tengamos una respuesta.
+                            </div>
+                        `}
+                        
                         ${ticket.nueva_password_generada ? `
-                            <div class="alert alert-info">
+                            <div class="alert alert-warning border-0 rounded-4 shadow-sm">
                                 <h6 class="fw-bold mb-2">
                                     <i class="bi bi-key me-2"></i>Contraseña Temporal Generada
                                 </h6>
@@ -750,6 +876,10 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                                         <i class="bi bi-clipboard"></i>
                                     </button>
                                 </div>
+                                <small class="text-muted mt-2 d-block">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Usa esta contraseña para acceder al sistema
+                                </small>
                             </div>
                         ` : ''}
                     </div>
