@@ -222,3 +222,28 @@ CREATE TABLE Capacitaciones (
     fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     estado BOOLEAN DEFAULT TRUE
 );
+
+
+
+
+CREATE TABLE tickets_soporte (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    tipo ENUM('password_recovery', 'technical_issue', 'general_support') DEFAULT 'password_recovery',
+    email_solicitante VARCHAR(255) NOT NULL,
+    asunto VARCHAR(255) NOT NULL DEFAULT 'Solicitud de recuperación de contraseña',
+    motivo_solicitud TEXT NOT NULL,  -- Campo del formulario
+    contraseña_temporal VARCHAR(255) NULL,  -- Campo del formulario
+    estado ENUM('pendiente', 'en_proceso', 'resuelto', 'cerrado') DEFAULT 'pendiente',
+    prioridad ENUM('baja', 'media', 'alta', 'urgente') DEFAULT 'media',
+    fecha_creacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    fecha_actualizacion TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    atendido_por INT NULL,
+    respuesta_admin TEXT NULL,
+    nueva_password_generada VARCHAR(255) NULL,  -- Para almacenar la nueva contraseña generada
+    fecha_respuesta DATETIME NULL,
+    
+    FOREIGN KEY (atendido_por) REFERENCES usuarios(id) ON DELETE SET NULL,
+    INDEX idx_estado_fecha (estado, fecha_creacion),
+    INDEX idx_email (email_solicitante),
+    INDEX idx_tipo (tipo)
+);

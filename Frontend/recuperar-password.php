@@ -83,5 +83,82 @@
     
     <!-- Bootstrap 5.33 JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    
 </body>
 </html> 
+
+// Agregar al final del archivo, antes de </body>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(form);
+        const data = {
+            email: formData.get('email'),
+            motivo: formData.get('motivo'),
+            temp_password: formData.get('temp_password')
+        };
+        
+        // Validaciones básicas
+        if (!data.email || !data.motivo) {
+            alert('Por favor completa todos los campos requeridos');
+            return;
+        }
+        
+        if (data.motivo.length < 10) {
+            alert('El motivo debe tener al menos 10 caracteres');
+            return;
+        }
+        
+        try {
+            // Deshabilitar botón
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="bi bi-spinner-border me-2"></i>Enviando...';
+            
+            const response = await fetch('../Backend/api/SoporteTecnico/Metodos-soporte.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                // Mostrar mensaje de éxito
+                form.innerHTML = `
+                    <div class="alert alert-success text-center">
+                        <i class="bi bi-check-circle fs-1 text-success d-block mb-3"></i>
+                        <h4>¡Solicitud Enviada!</h4>
+                        <p>${result.message}</p>
+                        <p><strong>Número de ticket:</strong> #${result.ticket_id}</p>
+                        <hr>
+                        <p class="mb-0">
+                            <a href="login.php" class="btn btn-primary">
+                                <i class="bi bi-arrow-left me-2"></i>Volver al Login
+                            </a>
+                        </p>
+                    </div>
+                `;
+            } else {
+                alert('Error: ' + result.message);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            }
+            
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error de conexión. Por favor intenta nuevamente.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+});
+</script>
+
