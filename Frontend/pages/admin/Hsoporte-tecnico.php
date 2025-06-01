@@ -708,51 +708,139 @@ session_start();
             document.getElementById('detallesTicket').innerHTML = `
                 <div class="row">
                     <div class="col-md-8">
-                        <h6>Información del Ticket</h6>
-                        <table class="table table-borderless">
-                            <tr><th width="150">Email:</th><td>${ticket.email_solicitante}</td></tr>
-                            <tr><th>Asunto:</th><td>${ticket.asunto}</td></tr>
-                            <tr><th>Tipo:</th><td>${formatTipo(ticket.tipo)}</td></tr>
-                            <tr><th>Prioridad:</th><td><span class="badge ${getPrioridadClass(ticket.prioridad)}">${formatPrioridad(ticket.prioridad)}</span></td></tr>
-                            <tr><th>Estado:</th><td><span class="badge ${getEstadoBadgeClass(ticket.estado)}">${formatEstado(ticket.estado)}</span></td></tr>
-                            <tr><th>Creado:</th><td>${formatFecha(ticket.fecha_creacion)}</td></tr>
-                        </table>
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-info-circle me-2"></i>Información del Ticket #${ticket.id}
+                        </h6>
+                        <div class="card border-0 bg-light mb-3">
+                            <div class="card-body p-3">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <strong>📧 Email:</strong><br>
+                                        <span class="text-muted">${ticket.email_solicitante}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>📋 Tipo:</strong><br>
+                                        <span class="badge bg-info">${formatTipo(ticket.tipo)}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>⚡ Prioridad:</strong><br>
+                                        <span class="badge ${getPrioridadClass(ticket.prioridad)}">${formatPrioridad(ticket.prioridad)}</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>📊 Estado:</strong><br>
+                                        <span class="badge ${getEstadoBadgeClass(ticket.estado)}">${formatEstado(ticket.estado)}</span>
+                                    </div>
+                                    <div class="col-12">
+                                        <strong>📅 Fecha de creación:</strong><br>
+                                        <span class="text-muted">${formatFecha(ticket.fecha_creacion)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         
-                        <h6>Descripción/Motivo</h6>
-                        <div class="bg-light p-3 rounded">${ticket.motivo_solicitud || ticket.descripcion || 'Sin descripción'}</div>
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-chat-dots me-2"></i>Consulta del Usuario
+                        </h6>
+                        <div class="alert alert-light border">
+                            <p class="mb-0">${ticket.motivo_solicitud || ticket.descripcion || 'Sin descripción'}</p>
+                        </div>
                         
                         ${ticket.respuesta_admin ? `
-                            <h6 class="mt-4">Respuesta del Administrador</h6>
-                            <div class="bg-primary bg-opacity-10 p-3 rounded">${ticket.respuesta_admin}</div>
-                        ` : ''}
+                            <h6 class="fw-bold text-success mb-3">
+                                <i class="bi bi-reply me-2"></i>Tu Respuesta Anterior
+                            </h6>
+                            <div class="alert alert-success border-success">
+                                <p class="mb-0">${ticket.respuesta_admin}</p>
+                                ${ticket.fecha_respuesta ? `
+                                    <small class="text-muted d-block mt-2">
+                                        <i class="bi bi-calendar-event me-1"></i>
+                                        Respondido el ${formatFecha(ticket.fecha_respuesta)}
+                                    </small>
+                                ` : ''}
+                            </div>
+                        ` : `
+                            <div class="alert alert-warning border-warning">
+                                <i class="bi bi-exclamation-triangle me-2"></i>
+                                <strong>Este ticket aún no ha sido respondido</strong>
+                            </div>
+                        `}
                         
                         ${ticket.nueva_password_generada ? `
-                            <h6 class="mt-4">Contraseña Temporal Generada</h6>
-                            <div class="bg-success bg-opacity-10 p-3 rounded">
-                                <i class="bi bi-check-circle text-success me-2"></i>Se ha generado una contraseña temporal para este usuario
+                            <h6 class="fw-bold text-warning mb-3">
+                                <i class="bi bi-key me-2"></i>Contraseña Temporal Generada
+                            </h6>
+                            <div class="alert alert-warning border-warning">
+                                <i class="bi bi-check-circle text-success me-2"></i>
+                                Se ha generado una contraseña temporal para este usuario
+                                <div class="mt-2">
+                                    <code>${ticket.nueva_password_generada}</code>
+                                    <button class="btn btn-sm btn-outline-warning ms-2" onclick="copiarTexto('${ticket.nueva_password_generada}')">
+                                        <i class="bi bi-clipboard"></i>
+                                    </button>
+                                </div>
                             </div>
                         ` : ''}
                     </div>
                     <div class="col-md-4">
-                        <h6>Acciones Rápidas</h6>
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-tools me-2"></i>Acciones Disponibles
+                        </h6>
                         <div class="d-grid gap-2">
-                            ${ticket.tipo === 'password_recovery' ? `
+                            
+                            <!-- ✅ BOTÓN RESPONDER MÁS VISIBLE -->
+                            <button class="btn btn-primary btn-lg" onclick="responderTicket()" 
+                                    ${ticket.estado === 'cerrado' ? 'disabled' : ''}>
+                                <i class="bi bi-reply me-2"></i>
+                                ${ticket.respuesta_admin ? 'Responder Nuevamente' : 'Responder al Usuario'}
+                            </button>
+                            
+                            <hr class="my-2">
+                            
+                            ${ticket.tipo === 'password_recovery' && !ticket.nueva_password_generada ? `
                                 <button class="btn btn-warning" onclick="generarPasswordTemporal('${ticket.email_solicitante}')">
-                                    <i class="bi bi-key me-2"></i>Generar Contraseña Temporal
+                                    <i class="bi bi-key me-2"></i>Generar Contraseña
                                 </button>
                             ` : ''}
-                            <button class="btn btn-info" onclick="cambiarEstado(${ticket.id}, 'en_proceso')">
-                                <i class="bi bi-gear me-2"></i>Marcar En Proceso
-                            </button>
-                            <button class="btn btn-success" onclick="cambiarEstado(${ticket.id}, 'resuelto')">
-                                <i class="bi bi-check me-2"></i>Marcar como Resuelto
-                            </button>
-                            <button class="btn btn-secondary" onclick="cambiarEstado(${ticket.id}, 'cerrado')">
-                                <i class="bi bi-x me-2"></i>Cerrar Ticket
-                            </button>
-                            <button class="btn btn-danger" onclick="eliminarTicket(${ticket.id})">
+                            
+                            ${ticket.estado !== 'en_proceso' ? `
+                                <button class="btn btn-info" onclick="cambiarEstado(${ticket.id}, 'en_proceso')">
+                                    <i class="bi bi-gear me-2"></i>Marcar En Proceso
+                                </button>
+                            ` : ''}
+                            
+                            ${ticket.estado !== 'resuelto' ? `
+                                <button class="btn btn-success" onclick="cambiarEstado(${ticket.id}, 'resuelto')">
+                                    <i class="bi bi-check me-2"></i>Marcar como Resuelto
+                                </button>
+                            ` : ''}
+                            
+                            ${ticket.estado !== 'cerrado' ? `
+                                <button class="btn btn-secondary" onclick="cambiarEstado(${ticket.id}, 'cerrado')">
+                                    <i class="bi bi-x me-2"></i>Cerrar Ticket
+                                </button>
+                            ` : ''}
+                            
+                            <hr class="my-2">
+                            
+                            <button class="btn btn-outline-danger" onclick="eliminarTicket(${ticket.id})">
                                 <i class="bi bi-trash me-2"></i>Eliminar Ticket
                             </button>
+                        </div>
+                        
+                        <!-- ✅ NUEVA: Información del usuario -->
+                        <div class="mt-4">
+                            <h6 class="fw-bold text-muted mb-2">
+                                <i class="bi bi-person me-2"></i>Información del Usuario
+                            </h6>
+                            <div class="card border-0 bg-light">
+                                <div class="card-body p-2">
+                                    <small class="text-muted">
+                                        <strong>Email:</strong> ${ticket.email_solicitante}<br>
+                                        <strong>Estado del ticket:</strong> ${formatEstado(ticket.estado)}<br>
+                                        <strong>Prioridad:</strong> ${formatPrioridad(ticket.prioridad)}
+                                    </small>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1018,59 +1106,195 @@ session_start();
 
         async function responderTicket() {
             try {
-                const { value: respuesta } = await Swal.fire({
-                    title: 'Responder Ticket',
+                // Obtener información del ticket
+                const modal = document.getElementById('verTicketModal');
+                const ticketId = modal.dataset.ticketId;
+                
+                if (!ticketId) {
+                    Swal.fire('Error', 'No se pudo identificar el ticket', 'error');
+                    return;
+                }
+
+                const ticket = ticketsData.find(t => t.id == ticketId);
+                if (!ticket) {
+                    Swal.fire('Error', 'Ticket no encontrado', 'error');
+                    return;
+                }
+
+                console.log('📝 Respondiendo al ticket:', ticketId, ticket);
+
+                // ✅ MODAL MEJORADO PARA RESPONDER
+                const { value: formValues } = await Swal.fire({
+                    title: `<i class="bi bi-reply me-2"></i>Responder al Usuario`,
                     html: `
-                        <textarea id="respuestaTextarea" class="form-control" rows="6" 
-                                  placeholder="Escribe tu respuesta al usuario..."></textarea>
+                        <div class="text-start">
+                            <div class="alert alert-info border-0 mb-3">
+                                <small>
+                                    <strong>📧 Para:</strong> ${ticket.email_solicitante}<br>
+                                    <strong>📋 Ticket:</strong> #${ticket.id} - ${formatTipo(ticket.tipo)}<br>
+                                    <strong>💬 Consulta:</strong> ${ticket.motivo_solicitud.substring(0, 100)}...
+                                </small>
+                            </div>
+                            
+                            ${ticket.respuesta_admin ? `
+                                <div class="alert alert-warning border-0 mb-3">
+                                    <small>
+                                        <strong>⚠️ Respuesta anterior:</strong><br>
+                                        "${ticket.respuesta_admin.substring(0, 150)}..."
+                                    </small>
+                                </div>
+                            ` : ''}
+                            
+                            <label for="respuestaAdmin" class="form-label fw-bold">
+                                <i class="bi bi-chat-dots me-1"></i>Tu Respuesta:
+                            </label>
+                            <textarea id="respuestaAdmin" class="form-control mb-3" rows="6" 
+                                      placeholder="Escribe una respuesta clara y completa para ayudar al usuario..."></textarea>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" value="" id="marcarResuelto">
+                                <label class="form-check-label" for="marcarResuelto">
+                                    <i class="bi bi-check-circle me-1"></i>
+                                    Marcar como resuelto después de responder
+                                </label>
+                            </div>
+                            
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" value="" id="enviarNotificacion" checked>
+                                <label class="form-check-label" for="enviarNotificacion">
+                                    <i class="bi bi-bell me-1"></i>
+                                    Notificar al usuario por email (simulado)
+                                </label>
+                            </div>
+                        </div>
                     `,
                     focusConfirm: false,
                     showCancelButton: true,
-                    confirmButtonText: 'Enviar Respuesta',
-                    cancelButtonText: 'Cancelar',
+                    confirmButtonText: '<i class="bi bi-send me-2"></i>Enviar Respuesta',
+                    cancelButtonText: '<i class="bi bi-x-lg me-2"></i>Cancelar',
+                    width: 600,
                     preConfirm: () => {
-                        const texto = document.getElementById('respuestaTextarea').value;
-                        if (!texto.trim()) {
-                            Swal.showValidationMessage('La respuesta no puede estar vacía');
+                        const respuesta = document.getElementById('respuestaAdmin').value.trim();
+                        const marcarResuelto = document.getElementById('marcarResuelto').checked;
+                        const enviarNotificacion = document.getElementById('enviarNotificacion').checked;
+                        
+                        if (!respuesta) {
+                            Swal.showValidationMessage('Por favor escribe una respuesta');
                             return false;
                         }
-                        return texto.trim();
+                        
+                        if (respuesta.length < 10) {
+                            Swal.showValidationMessage('La respuesta debe tener al menos 10 caracteres');
+                            return false;
+                        }
+                        
+                        return {
+                            respuesta: respuesta,
+                            marcarResuelto: marcarResuelto,
+                            enviarNotificacion: enviarNotificacion
+                        };
                     }
                 });
 
-                if (respuesta) {
-                    // Obtener ID del ticket del modal activo
-                    const ticketModal = document.getElementById('verTicketModal');
-                    const ticketId = ticketModal.dataset.ticketId; // Necesitamos añadir esto al modal
+                if (!formValues) return;
 
-                    const response = await fetch('../../../Backend/api/SoporteTecnico/Metodos-soporte.php', {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            id: ticketId,
-                            respuesta_admin: respuesta,
-                            estado: 'en_proceso',
-                            atendido_por: 1 // ID del admin
-                        })
+                console.log('📤 Enviando respuesta:', formValues);
+
+                // ✅ ENVIAR RESPUESTA AL BACKEND
+                const requestData = {
+                    id: parseInt(ticketId),
+                    respuesta_admin: formValues.respuesta,
+                    estado: formValues.marcarResuelto ? 'resuelto' : 'en_proceso',
+                    atendido_por: 1 // ID del admin (ajustar según tu sistema)
+                };
+
+                console.log('📡 Datos a enviar:', requestData);
+
+                const response = await fetch('../../../Backend/api/SoporteTecnico/Metodos-soporte.php', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const data = await response.json();
+                console.log('✅ Respuesta del servidor:', data);
+
+                if (data.success) {
+                    // ✅ ÉXITO CON MEJOR FEEDBACK
+                    await Swal.fire({
+                        icon: 'success',
+                        title: '¡Respuesta Enviada!',
+                        html: `
+                            <div class="alert alert-success border-0">
+                                <h6 class="mb-2">✅ Tu respuesta ha sido guardada exitosamente</h6>
+                                <div class="text-start">
+                                    <p class="mb-1"><strong>📧 Para:</strong> ${ticket.email_solicitante}</p>
+                                    <p class="mb-1"><strong>📋 Ticket:</strong> #${ticket.id}</p>
+                                    <p class="mb-1"><strong>📊 Nuevo estado:</strong> 
+                                        <span class="badge ${formValues.marcarResuelto ? 'bg-success' : 'bg-primary'}">
+                                            ${formValues.marcarResuelto ? 'Resuelto' : 'En Proceso'}
+                                        </span>
+                                    </p>
+                                    ${formValues.enviarNotificacion ? 
+                                        '<p class="mb-0"><strong>🔔 Notificación:</strong> El usuario será notificado</p>' : ''
+                                    }
+                                </div>
+                            </div>
+                        `,
+                        confirmButtonText: 'Entendido'
                     });
 
-                    const data = await response.json();
-
-                    if (data.success) {
-                        Swal.fire('¡Respuesta Enviada!', 'La respuesta ha sido guardada exitosamente', 'success');
-                        bootstrap.Modal.getInstance(ticketModal).hide();
-                        cargarTickets(); // Recargar lista
-                    } else {
-                        throw new Error(data.message || 'Error al enviar respuesta');
-                    }
+                    // Cerrar modal y recargar tickets
+                    bootstrap.Modal.getInstance(modal).hide();
+                    cargarTickets(); // Recargar lista para mostrar cambios
+                    
+                } else {
+                    throw new Error(data.message || 'Error al enviar respuesta');
                 }
 
             } catch (error) {
-                console.error('Error:', error);
-                Swal.fire('Error', 'No se pudo enviar la respuesta: ' + error.message, 'error');
+                console.error('❌ Error completo:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error al Enviar Respuesta',
+                    text: 'No se pudo enviar la respuesta: ' + error.message,
+                    footer: 'Verifica tu conexión y vuelve a intentarlo'
+                });
             }
+        }
+
+        // ✅ FUNCIÓN AUXILIAR PARA COPIAR TEXTO
+        function copiarTexto(texto) {
+            navigator.clipboard.writeText(texto).then(() => {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Copiado!',
+                    text: 'Texto copiado al portapapeles',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            }).catch(() => {
+                // Fallback para navegadores más antiguos
+                const input = document.createElement('input');
+                input.value = texto;
+                document.body.appendChild(input);
+                input.select();
+                document.execCommand('copy');
+                document.body.removeChild(input);
+                
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Copiado!',
+                    timer: 1500,
+                    showConfirmButton: false,
+                    toast: true,
+                    position: 'top-end'
+                });
+            });
         }
     </script>
 </body>
