@@ -44,7 +44,7 @@ try {
                 $id = (int) $_GET['id'];
                 if (isset($_GET['download'])) {
                     // Obtener el archivo para descarga
-                    $sql = "SELECT archivo_nombre, archivo_tipo, archivo_contenido FROM Capacitaciones WHERE id = ? AND estado = 1";
+                    $sql = "SELECT archivo_nombre, archivo_tipo, archivo_contenido FROM Capacitaciones WHERE id = ?";
                     $stmt = $conn->prepare($sql);
                     $stmt->bind_param("i", $id);
                     $stmt->execute();
@@ -52,8 +52,13 @@ try {
                     
                     if ($row = $result->fetch_assoc()) {
                         // Establecer los headers correctos según el tipo de archivo
-                        $contentType = $row['archivo_tipo'] === 'PDF' ? 'application/pdf' : 
-                                      ($row['archivo_tipo'] === 'WORD' ? 'application/msword' : 'application/octet-stream');
+                        $contentType = match($row['archivo_tipo']) {
+                            'PDF' => 'application/pdf',
+                            'WORD' => strpos($row['archivo_nombre'], '.docx') !== false ? 
+                                     'application/vnd.openxmlformats-officedocument.wordprocessingml.document' : 
+                                     'application/msword',
+                            default => 'application/octet-stream'
+                        };
                         
                         header('Content-Type: ' . $contentType);
                         header('Content-Disposition: attachment; filename="' . $row['archivo_nombre'] . '"');
@@ -86,7 +91,7 @@ try {
             } else {
                 // Listar todas las capacitaciones (sin el contenido de los archivos)
                 $sql = "SELECT id, titulo, descripcion, archivo_nombre, archivo_tipo, fecha_creacion, fecha_actualizacion, estado 
-                        FROM Capacitaciones ORDER BY fecha_creacion DESC";
+                        FROM Capacitaciones WHERE estado = 1 ORDER BY fecha_creacion DESC";
                 $result = $conn->query($sql);
                 $capacitaciones = [];
                 while ($row = $result->fetch_assoc()) {
@@ -147,12 +152,42 @@ try {
                 logError("MIME type detectado", $mime_type);
 
                 $allowed_mimes = [
-                    'PDF' => ['application/pdf'],
-                    'WORD' => ['application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document']
+                    'PDF' => [
+                        'application/pdf',
+                        'application/x-pdf',
+                        'application/acrobat',
+                        'applications/vnd.pdf',
+                        'text/pdf',
+                        'text/x-pdf'
+                    ],
+                    'WORD' => [
+                        'application/msword',
+                        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+                        'application/vnd.ms-word',
+                        'application/doc',
+                        'application/ms-doc',
+                        'application/x-msword',
+                        'application/x-doc',
+                        'application/word'
+                    ]
                 ];
 
-                if (!in_array($mime_type, $allowed_mimes[$archivo_tipo])) {
-                    throw new Exception('El archivo no es válido o está corrupto. Tipo MIME: ' . $mime_type);
+                // Validación más permisiva
+                $mime_valid = false;
+                foreach ($allowed_mimes[$archivo_tipo] as $allowed_mime) {
+                    if (strpos($mime_type, $allowed_mime) !== false || $mime_type === $allowed_mime) {
+                        $mime_valid = true;
+                        break;
+                    }
+                }
+
+                if (!$mime_valid) {
+                    // Log pero permitir el archivo si la extensión es correcta
+                    logError("MIME type no reconocido, pero extensión válida", [
+                        'detected' => $mime_type,
+                        'expected' => $allowed_mimes[$archivo_tipo],
+                        'extension' => $file_type
+                    ]);
                 }
 
                 $archivo_nombre = $file['name'];
@@ -163,9 +198,27 @@ try {
                 }
             } elseif (!$id) {
                 throw new Exception('Se requiere un archivo para crear una capacitación');
+            } elseif (isset($_FILES['archivo']) && $_FILES['archivo']['error'] !== UPLOAD_ERR_NO_FILE) {
+                // Manejo detallado de errores de subida
+                $upload_errors = [
+                    UPLOAD_ERR_INI_SIZE => 'El archivo excede el tamaño máximo permitido por PHP',
+                    UPLOAD_ERR_FORM_SIZE => 'El archivo excede el tamaño máximo especificado en el formulario',
+                    UPLOAD_ERR_PARTIAL => 'El archivo se subió parcialmente',
+                    UPLOAD_ERR_NO_TMP_DIR => 'Falta el directorio temporal',
+                    UPLOAD_ERR_CANT_WRITE => 'No se pudo escribir el archivo en el disco',
+                    UPLOAD_ERR_EXTENSION => 'Una extensión de PHP detuvo la subida del archivo'
+                ];
+                
+                $error_code = $_FILES['archivo']['error'];
+                $error_message = isset($upload_errors[$error_code]) ? 
+                                $upload_errors[$error_code] : 
+                                'Error desconocido en la subida del archivo (código: ' . $error_code . ')';
+                
+                throw new Exception($error_message);
             }
 
             if ($id) {
+                logError("Actualizando capacitación", ['id' => $id, 'titulo' => $titulo]);
                 // Actualizar capacitación
                 if (isset($archivo_contenido)) {
                     $sql = "UPDATE Capacitaciones SET titulo = ?, descripcion = ?, archivo_nombre = ?, 
@@ -187,6 +240,7 @@ try {
                 }
                 $mensaje = "Capacitación actualizada correctamente";
             } else {
+                logError("Creando nueva capacitación", ['titulo' => $titulo]);
                 // Crear nueva capacitación
                 $sql = "INSERT INTO Capacitaciones (titulo, descripcion, archivo_nombre, archivo_tipo, 
                         archivo_contenido, estado) VALUES (?, ?, ?, ?, ?, ?)";
@@ -208,16 +262,35 @@ try {
 
         case 'DELETE':
             $data = json_decode(file_get_contents("php://input"), true);
+            logError("Datos DELETE recibidos", $data);
+            
             if (isset($data['id'])) {
                 $id = (int) $data['id'];
-                // En lugar de eliminar, marcamos como inactivo
+                logError("Eliminando capacitación", ['id' => $id]);
+                
+                // Verificar que existe
+                $check_sql = "SELECT id FROM Capacitaciones WHERE id = ?";
+                $check_stmt = $conn->prepare($check_sql);
+                $check_stmt->bind_param("i", $id);
+                $check_stmt->execute();
+                
+                if ($check_stmt->get_result()->num_rows === 0) {
+                    http_response_code(404);
+                    echo json_encode(['error' => 'Capacitación no encontrada']);
+                    break;
+                }
+                
+                // Marcar como inactivo
                 $sql = "UPDATE Capacitaciones SET estado = 0 WHERE id = ?";
                 $stmt = $conn->prepare($sql);
                 $stmt->bind_param("i", $id);
+                
                 if ($stmt->execute()) {
-                    echo json_encode(['success' => true, 'mensaje' => 'Capacitación desactivada correctamente']);
+                    logError("Capacitación eliminada exitosamente", ['id' => $id]);
+                    echo json_encode(['success' => true, 'mensaje' => 'Capacitación eliminada correctamente']);
                 } else {
-                    echo json_encode(['error' => 'Error al desactivar la capacitación: ' . $stmt->error]);
+                    logError("Error al eliminar capacitación", ['id' => $id, 'error' => $stmt->error]);
+                    echo json_encode(['error' => 'Error al eliminar la capacitación: ' . $stmt->error]);
                 }
             } else {
                 echo json_encode(['error' => 'Se requiere el id de la capacitación']);
