@@ -83,8 +83,33 @@
     // ========== VERIFICAR SI SE SOLICITA LOGOUT ==========
     // Revisar si la URL contiene parámetro ?logout=true
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('logout') === 'true') {
+    const logoutParam = urlParams.get('logout');
+
+    if (logoutParam === 'true') {
+        // Limpiar datos locales
         localStorage.removeItem('userData');
+        sessionStorage.clear();
+        
+        // Mostrar mensaje de logout exitoso
+        setTimeout(() => {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-success alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>Sesión cerrada correctamente
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const container = document.querySelector('.container-fluid');
+            container.insertBefore(alertDiv, container.firstChild);
+            
+            // Auto-ocultar después de 4 segundos
+            setTimeout(() => {
+                if (alertDiv && alertDiv.parentNode) {
+                    alertDiv.remove();
+                }
+            }, 4000);
+        }, 100);
+        
         // Limpiar URL sin recargar página
         window.history.replaceState({}, document.title, window.location.pathname);
     }

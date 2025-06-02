@@ -318,12 +318,10 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                                 </ol>
                             </nav>
                         </div>
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2" id="header-actions">
+                            <!-- Se actualizará dinámicamente según la sección -->
                             <button class="btn btn-outline-primary" onclick="cargarDashboard()">
                                 <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
-                            </button>
-                            <button class="btn btn-custom-primary" onclick="nuevaSolicitudSoporte()">
-                                <i class="bi bi-plus-circle me-2"></i>Nueva Solicitud
                             </button>
                         </div>
                     </div>
@@ -540,34 +538,230 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
 
                     <!-- ========== OTRAS SECCIONES (Placeholder) ========== -->
                     <div id="seccion-reservas" class="content-section" style="display: none;">
-                        <div class="section-card">
-                            <div class="card-body p-5 text-center">
-                                <i class="bi bi-search text-muted fs-1 mb-3"></i>
-                                <h5 class="text-muted">Revisión de Salas</h5>
-                                <p class="text-muted">Esta sección mostrará las salas disponibles para reservar.</p>
-                                <button class="btn btn-custom-primary">Buscar Salas Disponibles</button>
+                        <!-- Filtros de Búsqueda -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="section-card">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3"><i class="bi bi-filter me-2"></i>Filtros de Búsqueda</h6>
+                                        <div class="row g-3">
+                                            <div class="col-md-3">
+                                                <label class="form-label">Fecha</label>
+                                                <input type="date" class="form-control" id="filtro-fecha">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">Hora Inicio</label>
+                                                <input type="time" class="form-control" id="filtro-hora-inicio">
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">Duración</label>
+                                                <select class="form-select" id="filtro-duracion">
+                                                    <option value="">Cualquier duración</option>
+                                                    <option value="1">1 hora</option>
+                                                    <option value="2">2 horas</option>
+                                                    <option value="3">3 horas</option>
+                                                    <option value="4">4+ horas</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">Capacidad</label>
+                                                <select class="form-select" id="filtro-capacidad">
+                                                    <option value="">Cualquier capacidad</option>
+                                                    <option value="10">Hasta 10 personas</option>
+                                                    <option value="20">Hasta 20 personas</option>
+                                                    <option value="30">Hasta 30 personas</option>
+                                                    <option value="50">50+ personas</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="mt-3">
+                                            <button class="btn btn-primary" onclick="buscarSalas()">
+                                                <i class="bi bi-search me-2"></i>Buscar Salas
+                                            </button>
+                                            <button class="btn btn-outline-secondary" onclick="limpiarFiltros()">
+                                                <i class="bi bi-arrow-clockwise me-2"></i>Limpiar
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resultados de Salas -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="section-card">
+                                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                        <h6 class="fw-bold text-primary mb-0">
+                                            <i class="bi bi-door-open me-2"></i>Salas Disponibles
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="lista-salas-disponibles">
+                                            <!-- Se cargarán las salas dinámicamente -->
+                                            <div class="text-center text-muted py-5">
+                                                <i class="bi bi-search fs-1 mb-3"></i>
+                                                <p>Selecciona los filtros y busca salas disponibles</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div id="seccion-nueva-reserva" class="content-section" style="display: none;">
-                        <div class="section-card">
-                            <div class="card-body p-5 text-center">
-                                <i class="bi bi-plus-circle text-muted fs-1 mb-3"></i>
-                                <h5 class="text-muted">Nueva Reserva</h5>
-                                <p class="text-muted">Formulario para crear una nueva reserva de sala.</p>
-                                <button class="btn btn-custom-primary">Crear Reserva</button>
+                        <div class="row">
+                            <div class="col-lg-8">
+                                <div class="section-card">
+                                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                        <h6 class="fw-bold text-primary mb-0">
+                                            <i class="bi bi-plus-circle me-2"></i>Crear Nueva Reserva
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <form id="form-nueva-reserva">
+                                            <div class="row g-3 mb-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Fecha de Reserva</label>
+                                                    <input type="date" class="form-control" id="fecha-reserva" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Sala</label>
+                                                    <select class="form-select" id="sala-reserva" required>
+                                                        <option value="">Selecciona una sala</option>
+                                                        <option value="1">Sala A - Capacidad 20</option>
+                                                        <option value="2">Sala B - Capacidad 30</option>
+                                                        <option value="3">Sala C - Capacidad 50</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            <div class="row g-3 mb-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Hora Inicio</label>
+                                                    <input type="time" class="form-control" id="hora-inicio" required>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label fw-semibold">Hora Fin</label>
+                                                    <input type="time" class="form-control" id="hora-fin" required>
+                                                </div>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Propósito de la Reserva</label>
+                                                <textarea class="form-control" id="proposito-reserva" rows="3" 
+                                                          placeholder="Describe el propósito de la reserva..." required></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-semibold">Número de Asistentes</label>
+                                                <input type="number" class="form-control" id="num-asistentes" min="1" max="100" required>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary btn-lg">
+                                                    <i class="bi bi-calendar-plus me-2"></i>Crear Reserva
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-4">
+                                <div class="section-card">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3"><i class="bi bi-info-circle me-2"></i>Información</h6>
+                                        <div class="small text-muted">
+                                            <p><strong>Horarios disponibles:</strong><br>
+                                            Lunes a Viernes: 7:00 AM - 9:00 PM<br>
+                                            Sábados: 8:00 AM - 6:00 PM</p>
+                                            
+                                            <p><strong>Tiempo mínimo:</strong> 1 hora<br>
+                                            <strong>Tiempo máximo:</strong> 8 horas</p>
+                                            
+                                            <p><strong>Cancelación:</strong><br>
+                                            Puedes cancelar hasta 2 horas antes del inicio.</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     <div id="seccion-mis-qr" class="content-section" style="display: none;">
-                        <div class="section-card">
-                            <div class="card-body p-5 text-center">
-                                <i class="bi bi-qr-code text-muted fs-1 mb-3"></i>
-                                <h5 class="text-muted">Mis Códigos QR</h5>
-                                <p class="text-muted">Visualiza y gestiona tus códigos QR de reservas.</p>
-                                <button class="btn btn-custom-primary">Ver Códigos QR</button>
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="section-card">
+                                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="fw-bold text-primary mb-0">
+                                                <i class="bi bi-qr-code me-2"></i>Mis Códigos QR de Reservas
+                                            </h6>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="actualizarQRs()">
+                                                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="lista-codigos-qr">
+                                            <!-- Se cargarán los QRs dinámicamente -->
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <div class="card border-primary">
+                                                        <div class="card-body text-center">
+                                                            <div class="mb-3">
+                                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=RESERVA-001" 
+                                                                     alt="QR Code" class="img-fluid">
+                                                            </div>
+                                                            <h6 class="fw-bold">Sala A - Hoy 14:00</h6>
+                                                            <p class="text-muted small">Reserva #001</p>
+                                                            <div class="d-grid gap-2">
+                                                                <button class="btn btn-primary btn-sm">
+                                                                    <i class="bi bi-download me-1"></i>Descargar
+                                                                </button>
+                                                                <button class="btn btn-outline-primary btn-sm">
+                                                                    <i class="bi bi-share me-1"></i>Compartir
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="card border-success">
+                                                        <div class="card-body text-center">
+                                                            <div class="mb-3">
+                                                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=RESERVA-002" 
+                                                                     alt="QR Code" class="img-fluid">
+                                                            </div>
+                                                            <h6 class="fw-bold">Sala B - Mañana 10:00</h6>
+                                                            <p class="text-muted small">Reserva #002</p>
+                                                            <div class="d-grid gap-2">
+                                                                <button class="btn btn-success btn-sm">
+                                                                    <i class="bi bi-download me-1"></i>Descargar
+                                                                </button>
+                                                                <button class="btn btn-outline-success btn-sm">
+                                                                    <i class="bi bi-share me-1"></i>Compartir
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información sobre QR -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-info border-0 rounded-4">
+                                    <h6 class="fw-bold"><i class="bi bi-lightbulb me-2"></i>¿Cómo usar los códigos QR?</h6>
+                                    <ul class="mb-0">
+                                        <li>Escanea el código QR al llegar a la sala reservada</li>
+                                        <li>El código confirma tu asistencia automáticamente</li>
+                                        <li>Puedes descargar o compartir los códigos</li>
+                                        <li>Los códigos expiran después de la reserva</li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -625,8 +819,18 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                             <label for="emailSolicitud" class="form-label fw-semibold">
                                 <i class="bi bi-envelope me-1"></i>Tu Email
                             </label>
-                            <input type="email" class="form-control rounded-3" id="emailSolicitud" 
-                                   value="<?= htmlspecialchars($email_usuario) ?>" required>
+                            <div class="input-group">
+                                <input type="email" class="form-control rounded-start" id="emailSolicitud" 
+                                       value="<?= htmlspecialchars($email_usuario) ?>" required>
+                                <button class="btn btn-outline-secondary" type="button" id="btn-editar-email" 
+                                        onclick="toggleEditEmail()">
+                                    <i class="bi bi-pencil me-1"></i>Cambiar
+                                </button>
+                            </div>
+                            <div class="form-text" id="email-help">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Este es tu email registrado. Haz clic en "Cambiar" si quieres usar otro email para la respuesta.
+                            </div>
                         </div>
                         <div class="mb-4">
                             <label for="motivoSolicitud" class="form-label fw-semibold">
@@ -691,6 +895,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
         const API_SOPORTE = '../../Backend/api/SoporteTecnico/Metodos-soporte.php';
         let misTickets = [];
         let mostrandoTodos = false;
+        let inactivityTimer;
 
         // ========== INICIALIZACIÓN ==========
         document.addEventListener('DOMContentLoaded', function() {
@@ -699,7 +904,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
             cargarMisTickets();
         });
 
-        // ========== NAVEGACIÓN ENTRE SECCIONES ==========
+        // ========== NAVEGACIÓN ENTRE SECCIONES MEJORADA ==========
         function mostrarSeccion(seccion) {
             // Ocultar todas las secciones
             document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
@@ -731,10 +936,84 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
             
             document.getElementById('breadcrumb-actual').textContent = breadcrumbTextos[seccion] || 'Sección';
             
+            // Actualizar botones del header según la sección
+            actualizarHeaderActions(seccion);
+            
             // Cargar datos específicos según la sección
-            if (seccion === 'soporte') {
-                cargarMisTickets();
+            switch(seccion) {
+                case 'soporte':
+                    cargarMisTickets();
+                    break;
+                case 'reservas':
+                    cargarSalasDisponibles();
+                    break;
+                case 'mis-qr':
+                    cargarCodigosQR();
+                    break;
+                case 'nueva-reserva':
+                    configurarFormularioReserva();
+                    break;
+                case 'capacitaciones':
+                    cargarCapacitaciones();
+                    break;
+                case 'manual':
+                    cargarManualUsuario();
+                    break;
             }
+        }
+
+        // ========== ACTUALIZAR BOTONES DEL HEADER ==========
+        function actualizarHeaderActions(seccion) {
+            const headerActions = document.getElementById('header-actions');
+            
+            const acciones = {
+                'resumen': `
+                    <button class="btn btn-outline-primary" onclick="cargarDashboard()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+                    </button>
+                `,
+                'reservas': `
+                    <button class="btn btn-outline-primary" onclick="cargarSalasDisponibles()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+                    </button>
+                    <button class="btn btn-primary" onclick="mostrarSeccion('nueva-reserva')">
+                        <i class="bi bi-plus-circle me-2"></i>Nueva Reserva
+                    </button>
+                `,
+                'nueva-reserva': `
+                    <button class="btn btn-outline-secondary" onclick="limpiarFormularioReserva()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Limpiar
+                    </button>
+                `,
+                'mis-qr': `
+                    <button class="btn btn-outline-primary" onclick="cargarCodigosQR()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+                    </button>
+                    <button class="btn btn-primary" onclick="descargarTodosQR()">
+                        <i class="bi bi-download me-2"></i>Descargar Todos
+                    </button>
+                `,
+                'soporte': `
+                    <button class="btn btn-outline-primary" onclick="cargarMisTickets()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+                    </button>
+                    <button class="btn btn-primary" onclick="nuevaSolicitudSoporte()">
+                        <i class="bi bi-plus-circle me-2"></i>Nueva Solicitud
+                    </button>
+                `,
+                'capacitaciones': `
+                    <button class="btn btn-outline-primary" onclick="cargarCapacitaciones()">
+                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
+                    </button>
+                `,
+                'manual': `
+                    <button class="btn btn-outline-primary" onclick="descargarManual()">
+                        <i class="bi bi-download me-2"></i>Descargar PDF
+                    </button>
+                `
+            };
+            
+            headerActions.innerHTML = acciones[seccion] || acciones['resumen'];
         }
 
         // ========== CARGAR DASHBOARD ==========
@@ -1030,8 +1309,25 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
 
         // ========== NUEVA SOLICITUD ==========
         function nuevaSolicitudSoporte() {
-            document.getElementById('emailSolicitud').value = emailUsuario;
-            new bootstrap.Modal(document.getElementById('modalNuevaSolicitud')).show();
+            // Establecer email del usuario al abrir el modal
+            const emailUsuarioActual = JSON.parse(localStorage.getItem('userData') || '{}').email || emailUsuario;
+            document.getElementById('emailSolicitud').value = emailUsuarioActual;
+            
+            // Resetear el estado del campo email
+            const emailInput = document.getElementById('emailSolicitud');
+            const btnEditar = document.getElementById('btn-editar-email');
+            const helpText = document.getElementById('email-help');
+            
+            if (btnEditar) { // Solo si usas la opción 2
+                emailInput.setAttribute('readonly', true);
+                btnEditar.innerHTML = '<i class="bi bi-pencil me-1"></i>Cambiar';
+                btnEditar.className = 'btn btn-outline-secondary';
+                helpText.innerHTML = '<i class="bi bi-info-circle me-1"></i>Este es tu email registrado. Haz clic en "Cambiar" si quieres usar otro email para la respuesta.';
+            }
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('modalNuevaSolicitud'));
+            modal.show();
         }
 
         function abrirSoporteTecnico() {
@@ -1327,11 +1623,50 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Sí, cerrar sesión',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc3545'
+            }).then(async (result) => {
                 if (result.isConfirmed) {
-                    // Redirigir a logout
-                    window.location.href = '../../login.php';
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Cerrando sesión...',
+                        text: 'Por favor espera',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    try {
+                        // Obtener datos del usuario
+                        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                        
+                        // Llamar al endpoint de logout
+                        await fetch('../../Backend/api/logout.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${userData.token || ''}`
+                            },
+                            body: JSON.stringify({
+                                token: userData.token || null,
+                                userId: userData.id || null
+                            })
+                        });
+
+                    } catch (error) {
+                        console.error('Error al cerrar sesión:', error);
+                        // Continuar con logout local aunque falle el servidor
+                    } finally {
+                        // Siempre limpiar datos locales
+                        localStorage.removeItem('userData');
+                        sessionStorage.clear();
+                        
+                        // Redirigir con parámetro de logout
+                        window.location.replace('../../login.php?logout=true');
+                    }
                 }
             });
         }
@@ -1349,6 +1684,36 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                 cargarMisTickets();
             }
         }, 30000);
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                cerrarSesion();
+            }, 30 * 60 * 1000); // 30 minutos
+        }
+
+        // ========== FUNCIÓN PARA EDITAR EMAIL ==========
+        function toggleEditEmail() {
+            const emailInput = document.getElementById('emailSolicitud');
+            const btnEditar = document.getElementById('btn-editar-email');
+            const helpText = document.getElementById('email-help');
+            
+            if (emailInput.hasAttribute('readonly')) {
+                // Habilitar edición
+                emailInput.removeAttribute('readonly');
+                emailInput.focus();
+                emailInput.select();
+                btnEditar.innerHTML = '<i class="bi bi-check me-1"></i>Confirmar';
+                btnEditar.className = 'btn btn-success';
+                helpText.innerHTML = '<i class="bi bi-exclamation-triangle me-1"></i>Modifica el email y haz clic en "Confirmar" para guardarlo.';
+            } else {
+                // Deshabilitar edición
+                emailInput.setAttribute('readonly', true);
+                btnEditar.innerHTML = '<i class="bi bi-pencil me-1"></i>Cambiar';
+                btnEditar.className = 'btn btn-outline-secondary';
+                helpText.innerHTML = '<i class="bi bi-check-circle me-1"></i>Email confirmado. Haz clic en "Cambiar" si necesitas modificarlo.';
+            }
+        }
     </script>
 </body>
 </html>

@@ -369,11 +369,43 @@ $pagina_actual = $_GET['page'] ?? 'dashboard';
                 icon: 'question',
                 showCancelButton: true,
                 confirmButtonText: 'Sí, cerrar sesión',
-                cancelButtonText: 'Cancelar'
-            }).then((result) => {
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#dc3545'
+            }).then(async (result) => {
                 if (result.isConfirmed) {
-                    localStorage.removeItem('userData');
-                    window.location.href = '../login.php?logout=true';
+                    // Mostrar loading
+                    Swal.fire({
+                        title: 'Cerrando sesión...',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false,
+                        showConfirmButton: false,
+                        didOpen: () => Swal.showLoading()
+                    });
+
+                    try {
+                        const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+                        
+                        // Llamar al endpoint de logout
+                        await fetch('../../Backend/api/logout.php', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${userData.token || ''}`
+                            },
+                            body: JSON.stringify({
+                                token: userData.token || null,
+                                userId: userData.id || null
+                            })
+                        });
+                        
+                    } catch (error) {
+                        console.error('Error al cerrar sesión:', error);
+                    } finally {
+                        // Siempre limpiar cliente
+                        localStorage.removeItem('userData');
+                        sessionStorage.clear();
+                        window.location.replace('../login.php?logout=true');
+                    }
                 }
             });
         }
