@@ -3,375 +3,602 @@
 session_start();
 // Asumir que el email está en la sesión (ajustar según tu sistema de auth)
 $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemplo.com';
+$usuario_nombre = isset($_SESSION['nombre']) ? $_SESSION['nombre'] : 'Docente';
+$usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Usuarios</title>
-    <!-- Bootstrap CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>Dashboard Docente - ROOMIT</title>
+    
+    <!-- Bootstrap 5.3.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <style>
-        /* Estilos mínimos necesarios que no se pueden lograr con Bootstrap solo */
+        /* Estilos profesionales similares al dashboard admin */
         body {
             background: linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%);
             font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
         }
-        .custom-card {
+        
+        .sidebar-glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .nav-link-custom {
+            transition: all 0.3s ease;
+            border-left: 3px solid transparent;
+        }
+        
+        .nav-link-custom:hover {
+            background: rgba(13, 110, 253, 0.1);
+            border-left-color: #0d6efd;
+            transform: translateX(5px);
+        }
+        
+        .nav-link-custom.active {
+            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1), rgba(13, 110, 253, 0.05));
+            border-left-color: #0d6efd;
+            color: #0d6efd !important;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            color: white;
+            font-weight: bold;
+        }
+        
+        .brand-logo {
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .stats-card {
             transition: all 0.3s ease;
             border: none;
-            box-shadow: 0 4px 20px rgba(25, 118, 210, 0.08);
+            border-radius: 15px;
         }
-        .custom-card:hover {
+        
+        .stats-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(25, 118, 210, 0.15);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
         }
+        
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            min-height: 85vh;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        }
+        
+        .section-card {
+            background: white;
+            border-radius: 15px;
+            border: none;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+        }
+        
+        .section-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
+        }
+        
         .btn-custom-primary {
             background: linear-gradient(135deg, #1976d2 0%, #2196f3 100%);
             border: none;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(25, 118, 210, 0.3);
+            border-radius: 10px;
         }
+        
         .btn-custom-primary:hover {
             background: linear-gradient(135deg, #1565c0 0%, #1976d2 100%);
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(25, 118, 210, 0.4);
         }
-        .main-container {
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+        
+        .ticket-card {
+            transition: all 0.3s ease;
+            border-left: 4px solid transparent;
         }
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 700;
-            background: linear-gradient(135deg, #1976d2, #2196f3);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+        
+        .ticket-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
+        
+        .ticket-pendiente { border-left-color: #ffc107; }
+        .ticket-en-proceso { border-left-color: #0d6efd; }
+        .ticket-resuelto { border-left-color: #198754; }
+        .ticket-cerrado { border-left-color: #6c757d; }
     </style>
 </head>
-<body class="min-vh-100">
-    <!-- Container principal con efecto glassmorphism -->
-    <div class="container main-container rounded-4 shadow-lg my-4 py-5 px-4">
-        
-        <!-- 1. Tarjetas de resumen estadísticas -->
-        <div class="row mb-5 g-4">
-            <div class="col-md-4">
-                <div class="card custom-card rounded-4 h-100 text-center border-0">
-                    <div class="card-body py-4">
-                        <i class="bi bi-calendar-check text-primary fs-1 mb-3"></i>
-                        <h6 class="card-title fw-bold text-primary mb-3" style="letter-spacing: 0.5px;">Reservas Activas</h6>
-                        <div class="stat-number">0</div>
-                    </div>
+<body class="bg-light">
+    <!-- ========== NAVBAR SUPERIOR ========== -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container-fluid">
+            <!-- Brand -->
+            <div class="d-flex align-items-center">
+                <div class="brand-logo me-3">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div>
+                    <span class="navbar-brand mb-0 h1 fw-bold">ROOMIT</span>
+                    <small class="d-block text-light opacity-75">Dashboard Docente</small>
                 </div>
             </div>
-            <div class="col-md-4">
-                <div class="card custom-card rounded-4 h-100 text-center border-0">
-                    <div class="card-body py-4">
-                        <i class="bi bi-door-open text-success fs-1 mb-3"></i>
-                        <h6 class="card-title fw-bold text-primary mb-3" style="letter-spacing: 0.5px;">Salas Disponibles</h6>
-                        <div class="stat-number text-success">0</div>
-                    </div>
+
+            <!-- Right Side Items -->
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notifications -->
+                <div class="position-relative">
+                    <button class="btn btn-outline-light btn-sm rounded-pill" id="btn-notificaciones">
+                        <i class="bi bi-bell"></i>
+                        <span class="notification-badge" id="badge-respuestas-nuevas" style="display: none;">
+                            <span id="count-respuestas-nuevas">0</span>
+                        </span>
+                    </button>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="card custom-card rounded-4 h-100 text-center border-0">
-                    <div class="card-body py-4">
-                        <i class="bi bi-exclamation-triangle text-warning fs-1 mb-3"></i>
-                        <h6 class="card-title fw-bold text-primary mb-3" style="letter-spacing: 0.5px;">Problemas/Casos</h6>
-                        <div class="stat-number text-warning">0</div>
-                    </div>
+
+                <!-- User Info -->
+                <div class="dropdown">
+                    <button class="btn btn-link text-white p-0 d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+                        <div class="user-avatar">
+                            <?= strtoupper(substr($usuario_nombre, 0, 2)) ?>
+                        </div>
+                        <div class="text-start d-none d-md-block">
+                            <div class="fw-semibold"><?= htmlspecialchars($usuario_nombre) ?></div>
+                            <small class="opacity-75"><?= ucfirst($usuario_rol) ?></small>
+                        </div>
+                        <i class="bi bi-chevron-down"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow">
+                        <li><h6 class="dropdown-header">Mi Cuenta</h6></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-person me-2"></i>Mi Perfil</a></li>
+                        <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i>Configuración</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="#" onclick="cerrarSesion()">
+                            <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                        </a></li>
+                    </ul>
                 </div>
             </div>
         </div>
+    </nav>
 
-        <!-- 2. Acciones Rápidas -->
-        <div class="mb-5">
-            <h5 class="fw-bold text-primary mb-4" style="letter-spacing: 0.5px;">
-                <i class="bi bi-lightning-charge me-2"></i>Acciones Rápidas
-            </h5>
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <button class="btn btn-custom-primary btn-lg w-100 rounded-3 py-3 fw-semibold">
-                        <i class="bi bi-search me-2"></i>Revisar Salas
-                </button>
-                </div>
-                <div class="col-md-4">
-                    <button class="btn btn-custom-primary btn-lg w-100 rounded-3 py-3 fw-semibold">
-                        <i class="bi bi-plus-circle me-2"></i>Asignar Sala
-                </button>
-                </div>
-                <div class="col-md-4">
-                    <button class="btn btn-custom-primary btn-lg w-100 rounded-3 py-3 fw-semibold">
-                        <i class="bi bi-qr-code me-2"></i>Ver QR
-                </button>
-                </div>
-            </div>
-        </div>
+    <div class="container-fluid">
+        <div class="row">
+            <!-- ========== SIDEBAR ========== -->
+            <nav class="col-lg-2 col-md-3 d-md-block sidebar-glass position-sticky" style="top: 0; height: 100vh; overflow-y: auto;">
+                <div class="position-sticky pt-4">
+                    
+                    <!-- Stats Cards en Sidebar -->
+                    <div class="px-3 mb-4">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <div class="card border-0 bg-primary bg-gradient text-white stats-card">
+                                    <div class="card-body p-2 text-center">
+                                        <i class="bi bi-calendar-check fs-4"></i>
+                                        <div class="fw-bold" id="stat-reservas">0</div>
+                                        <small>Reservas</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="card border-0 bg-warning bg-gradient text-white stats-card">
+                                    <div class="card-body p-2 text-center">
+                                        <i class="bi bi-headset fs-4"></i>
+                                        <div class="fw-bold" id="stat-tickets">0</div>
+                                        <small>Tickets</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
-        <!-- 3. Mis Reservas Activas -->
-        <div class="mb-5">
-            <h5 class="fw-bold text-primary mb-4" style="letter-spacing: 0.5px;">
-                <i class="bi bi-bookmark-check me-2"></i>Mis Reservas Activas
-            </h5>
-            <div class="card custom-card rounded-4 border-0" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);">
-                <div class="card-body p-4 position-relative">
-                    <div class="row">
-                        <div class="col-md-8">
-                            <h6 class="card-title fw-bold text-primary mb-3">
-                                <i class="bi bi-door-closed me-2"></i>Sala 101
+                    <!-- Navigation Menu -->
+                    <div class="px-3">
+                        <!-- Acciones Principales -->
+                        <div class="mb-4">
+                            <h6 class="text-uppercase text-muted fw-bold mb-3 px-2" style="font-size: 0.75rem; letter-spacing: 1px;">
+                                <i class="bi bi-lightning me-1"></i>Acciones Rápidas
                             </h6>
-                            <div class="d-flex flex-column gap-2">
-                                <p class="mb-0 fw-semibold text-dark">
-                                    <i class="bi bi-calendar-event text-primary me-2"></i>2024-03-20
-                                </p>
-                                <p class="mb-0 fw-semibold text-dark">
-                                    <i class="bi bi-clock text-primary me-2"></i>09:00 - 11:00
-                                </p>
-                                <p class="mb-0 fw-semibold text-dark">
-                                    <i class="bi bi-book text-primary me-2"></i>Matemáticas
-                                </p>
-                            </div>
+                            <ul class="nav flex-column">
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom active d-flex align-items-center py-2 px-3 rounded-3 mb-1" 
+                                       href="#reservas" onclick="mostrarSeccion('reservas')">
+                                        <i class="bi bi-search me-3 fs-5"></i>
+                                        <span class="fw-semibold">Revisar Salas</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom d-flex align-items-center py-2 px-3 rounded-3 mb-1" 
+                                       href="#nueva-reserva" onclick="mostrarSeccion('nueva-reserva')">
+                                        <i class="bi bi-plus-circle me-3 fs-5"></i>
+                                        <span class="fw-semibold">Nueva Reserva</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom d-flex align-items-center py-2 px-3 rounded-3 mb-1" 
+                                       href="#mis-qr" onclick="mostrarSeccion('mis-qr')">
+                                        <i class="bi bi-qr-code me-3 fs-5"></i>
+                                        <span class="fw-semibold">Mis Códigos QR</span>
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
-                        <div class="col-md-4 d-flex flex-column gap-2 justify-content-center">
-                            <button class="btn btn-primary rounded-3 fw-semibold">
-                                <i class="bi bi-qr-code me-2"></i>Ver QR
-                            </button>
-                            <button class="btn btn-danger rounded-3 fw-semibold">
-                                <i class="bi bi-x-circle me-2"></i>Cancelar
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- 4. Recursos y Ayuda -->
-        <div class="mb-5">
-            <h5 class="fw-bold text-primary mb-4" style="letter-spacing: 0.5px;">
-                <i class="bi bi-life-preserver me-2"></i>Recursos y Ayuda
-            </h5>
-            <div class="row g-4">
-                <div class="col-md-4">
-                    <div class="card custom-card h-100 text-center border-0 rounded-4">
-                        <div class="card-body d-flex flex-column justify-content-between p-4">
-                            <div>
-                                <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                                <i class="bi bi-mortarboard fs-1 text-primary"></i>
-                                </div>
-                                <h6 class="fw-bold text-primary mb-3">Capacitaciones</h6>
-                                <p class="text-muted small mb-4">
-                                    Accede a videos y materiales de capacitación sobre el uso del sistema
-                                </p>
-                            </div>
-                            <button class="btn btn-outline-primary rounded-pill fw-semibold px-4">
-                                Ver Capacitaciones
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card custom-card h-100 text-center border-0 rounded-4">
-                        <div class="card-body d-flex flex-column justify-content-between p-4">
-                            <div>
-                                <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                                    <i class="bi bi-book fs-1 text-success"></i>
-                                </div>
-                                <h6 class="fw-bold text-primary mb-3">Manual de Usuario</h6>
-                                <p class="text-muted small mb-4">
-                                    Consulta la guía completa de uso del sistema
-                                </p>
-                            </div>
-                            <button class="btn btn-outline-success rounded-pill fw-semibold px-4">
-                                Ver Manual
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card custom-card h-100 text-center border-0 rounded-4">
-                        <div class="card-body d-flex flex-column justify-content-between p-4">
-                            <div>
-                                <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
-                                    <i class="bi bi-headset fs-1 text-warning"></i>
-                                </div>
-                                <h6 class="fw-bold text-primary mb-3">Soporte Técnico</h6>
-                                <p class="text-muted small mb-4">
-                                    ¿Necesitas ayuda? Contacta con nuestro equipo de soporte
-                                </p>
-                            </div>
-                            <button class="btn btn-outline-warning rounded-pill fw-semibold px-4" onclick="abrirSoporteTecnico()">
-                                Solicitar Ayuda
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 5. MI SOPORTE TÉCNICO (VERSIÓN MEJORADA) -->
-        <div class="mb-5">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h5 class="fw-bold text-primary mb-0" style="letter-spacing: 0.5px;">
-                    <i class="bi bi-headset me-2"></i>Mi Soporte Técnico
-                    <!-- ✅ NUEVO: Indicador de respuestas pendientes -->
-                    <span class="badge bg-danger ms-2" id="badge-respuestas-nuevas" style="display: none;">
-                        <i class="bi bi-exclamation-circle me-1"></i>
-                        <span id="count-respuestas-nuevas">0</span> respuestas nuevas
-                    </span>
-                </h5>
-                <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="nuevaSolicitudSoporte()">
-                    <i class="bi bi-plus-circle me-1"></i>Nueva Solicitud
-                </button>
-            </div>
-
-            <!-- ✅ NUEVA SECCIÓN: Respuestas Pendientes -->
-            <div id="seccion-respuestas-pendientes" class="mb-4" style="display: none;">
-                <div class="alert alert-success border-0 rounded-4 shadow-sm">
-                    <div class="d-flex align-items-start">
-                        <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" 
-                             style="width: 50px; height: 50px; min-width: 50px;">
-                            <i class="bi bi-chat-dots-fill fs-4 text-success"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="fw-bold text-success mb-2">
-                                <i class="bi bi-bell me-2"></i>¡Tienes respuestas del soporte técnico!
+                        <!-- Soporte y Ayuda -->
+                        <div class="mb-4">
+                            <h6 class="text-uppercase text-muted fw-bold mb-3 px-2" style="font-size: 0.75rem; letter-spacing: 1px;">
+                                <i class="bi bi-life-preserver me-1"></i>Soporte
                             </h6>
-                            <p class="mb-2">El administrador ha respondido a tus solicitudes:</p>
-                            <div id="lista-respuestas-pendientes" class="mb-3">
-                                <!-- Se llenarán dinámicamente -->
-                            </div>
-                            <button class="btn btn-success btn-sm rounded-pill" onclick="verTodasRespuestas()">
-                                <i class="bi bi-eye me-1"></i>Ver Todas las Respuestas
-                            </button>
+                            <ul class="nav flex-column">
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom d-flex align-items-center py-2 px-3 rounded-3 mb-1" 
+                                       href="#soporte" onclick="mostrarSeccion('soporte')">
+                                        <i class="bi bi-headset me-3 fs-5"></i>
+                                        <span class="fw-semibold">Soporte Técnico</span>
+                                        <span class="ms-auto badge bg-danger rounded-pill" 
+                                              id="sidebar-badge-respuestas" style="display: none;">0</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom d-flex align-items-center py-2 px-3 rounded-3 mb-1" 
+                                       href="#capacitaciones" onclick="mostrarSeccion('capacitaciones')">
+                                        <i class="bi bi-mortarboard me-3 fs-5"></i>
+                                        <span class="fw-semibold">Capacitaciones</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom d-flex align-items-center py-2 px-3 rounded-3 mb-1" 
+                                       href="#manual" onclick="mostrarSeccion('manual')">
+                                        <i class="bi bi-book me-3 fs-5"></i>
+                                        <span class="fw-semibold">Manual</span>
+                                    </a>
+                                </li>
+                            </ul>
                         </div>
                     </div>
                 </div>
-            </div>
+            </nav>
 
-            <!-- Estadísticas Rápidas de Soporte -->
-            <div class="row g-3 mb-4">
-                <div class="col-md-3">
-                    <div class="card border-0 rounded-4 text-center" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
-                        <div class="card-body py-3">
-                            <i class="bi bi-clock-history text-warning fs-4 mb-2"></i>
-                            <h6 class="fw-bold mb-1" id="mis-tickets-pendientes">0</h6>
-                            <small class="text-muted">Pendientes</small>
+            <!-- ========== CONTENIDO PRINCIPAL ========== -->
+            <main class="col-lg-10 col-md-9 ms-sm-auto px-md-4">
+                <div class="main-content p-4 mt-4">
+                    
+                    <!-- ========== HEADER CON BREADCRUMB ========== -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2 class="fw-bold text-dark mb-1">Dashboard Docente</h2>
+                            <nav aria-label="breadcrumb">
+                                <ol class="breadcrumb">
+                                    <li class="breadcrumb-item"><a href="#" class="text-decoration-none">Inicio</a></li>
+                                    <li class="breadcrumb-item active" aria-current="page" id="breadcrumb-actual">Resumen</li>
+                                </ol>
+                            </nav>
                         </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card border-0 rounded-4 text-center" style="background: linear-gradient(135deg, #cce5ff 0%, #74b9ff 100%);">
-                        <div class="card-body py-3">
-                            <i class="bi bi-gear text-primary fs-4 mb-2"></i>
-                            <h6 class="fw-bold mb-1" id="mis-tickets-proceso">0</h6>
-                            <small class="text-muted">En Proceso</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card border-0 rounded-4 text-center" style="background: linear-gradient(135deg, #d4edda 0%, #00b894 100%);">
-                        <div class="card-body py-3">
-                            <i class="bi bi-check-circle text-success fs-4 mb-2"></i>
-                            <h6 class="fw-bold mb-1" id="mis-tickets-resueltos">0</h6>
-                            <small class="text-muted">Resueltos</small>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="card border-0 rounded-4 text-center" style="background: linear-gradient(135deg, #f8d7da 0%, #e17055 100%);">
-                        <div class="card-body py-3">
-                            <i class="bi bi-key text-danger fs-4 mb-2"></i>
-                            <h6 class="fw-bold mb-1" id="passwords-generadas">0</h6>
-                            <small class="text-muted">Contraseñas</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Lista de Mis Tickets -->
-            <div class="card custom-card rounded-4 border-0">
-                <div class="card-header bg-transparent border-0 pt-4 pb-0">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <h6 class="fw-bold text-primary mb-0">
-                            <i class="bi bi-ticket-detailed me-2"></i>Mis Solicitudes de Soporte
-                        </h6>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-outline-secondary btn-sm" onclick="cargarMisTickets()">
-                                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                            <button class="btn btn-outline-primary" onclick="cargarDashboard()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
                             </button>
-                            <button class="btn btn-outline-primary btn-sm" onclick="verTodasSolicitudes()">
-                                <i class="bi bi-list me-1"></i>Ver Todas
+                            <button class="btn btn-custom-primary" onclick="nuevaSolicitudSoporte()">
+                                <i class="bi bi-plus-circle me-2"></i>Nueva Solicitud
                             </button>
                         </div>
                     </div>
-                </div>
-                <div class="card-body pt-3">
-                    <!-- Loading -->
-                    <div id="loading-soporte" class="text-center py-4" style="display: none;">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="visually-hidden">Cargando...</span>
+
+                    <!-- ========== SECCIÓN: RESUMEN (Dashboard Principal) ========== -->
+                    <div id="seccion-resumen" class="content-section">
+                        <!-- Estadísticas Principales -->
+                        <div class="row mb-4 g-4">
+                            <div class="col-xl-3 col-md-6">
+                                <div class="section-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+                                            <i class="bi bi-calendar-check text-primary fs-1"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-primary mb-1" id="total-reservas-activas">0</h3>
+                                        <p class="text-muted mb-0">Reservas Activas</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="section-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="bg-success bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+                                            <i class="bi bi-door-open text-success fs-1"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-success mb-1" id="salas-disponibles">0</h3>
+                                        <p class="text-muted mb-0">Salas Disponibles</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="section-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="bg-warning bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+                                            <i class="bi bi-headset text-warning fs-1"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-warning mb-1" id="tickets-pendientes">0</h3>
+                                        <p class="text-muted mb-0">Tickets de Soporte</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="section-card h-100">
+                                    <div class="card-body text-center p-4">
+                                        <div class="bg-info bg-opacity-10 rounded-circle d-inline-flex p-3 mb-3">
+                                            <i class="bi bi-qr-code text-info fs-1"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-info mb-1" id="qr-generados">0</h3>
+                                        <p class="text-muted mb-0">Códigos QR</p>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                        <p class="text-muted mt-2 mb-0">Cargando mis solicitudes...</p>
+
+                        <!-- Mis Reservas Activas -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="section-card">
+                                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h5 class="fw-bold text-primary mb-0">
+                                                <i class="bi bi-bookmark-check me-2"></i>Mis Reservas Activas
+                                            </h5>
+                                            <button class="btn btn-outline-primary btn-sm" onclick="verTodasReservas()">
+                                                <i class="bi bi-list me-1"></i>Ver Todas
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="mis-reservas-container">
+                                            <!-- Se cargarán las reservas dinámicamente -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Notificaciones Recientes -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="section-card">
+                                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                        <h5 class="fw-bold text-primary mb-0">
+                                            <i class="bi bi-bell me-2"></i>Notificaciones Recientes
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="notificaciones-container">
+                                            <!-- Se cargarán las notificaciones dinámicamente -->
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Sin tickets -->
-                    <div id="sin-tickets" class="text-center py-5" style="display: none;">
-                        <i class="bi bi-inbox text-muted fs-1 mb-3"></i>
-                        <h6 class="text-muted mb-2">No tienes solicitudes de soporte</h6>
-                        <p class="text-muted small mb-3">Cuando necesites ayuda, puedes crear una nueva solicitud</p>
-                        <button class="btn btn-primary btn-sm rounded-pill" onclick="nuevaSolicitudSoporte()">
-                            <i class="bi bi-plus-circle me-1"></i>Crear Primera Solicitud
-                        </button>
+                    <!-- ========== SECCIÓN: SOPORTE TÉCNICO ========== -->
+                    <div id="seccion-soporte" class="content-section" style="display: none;">
+                        <!-- Respuestas Pendientes (Alerta destacada) -->
+                        <div id="seccion-respuestas-pendientes" class="mb-4" style="display: none;">
+                            <div class="alert alert-success border-0 rounded-4 shadow-sm">
+                                <div class="d-flex align-items-start">
+                                    <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" 
+                                         style="width: 50px; height: 50px; min-width: 50px;">
+                                        <i class="bi bi-chat-dots-fill fs-4 text-success"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold text-success mb-2">
+                                            <i class="bi bi-bell me-2"></i>¡Tienes respuestas del soporte técnico!
+                                        </h6>
+                                        <p class="mb-2">El administrador ha respondido a tus solicitudes:</p>
+                                        <div id="lista-respuestas-pendientes" class="mb-3">
+                                            <!-- Se llenará dinámicamente -->
+                                        </div>
+                                        <button class="btn btn-success btn-sm rounded-pill" onclick="verTodasRespuestas()">
+                                            <i class="bi bi-eye me-1"></i>Ver Todas las Respuestas
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estadísticas de Soporte -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-3">
+                                <div class="section-card text-center" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
+                                    <div class="card-body py-3">
+                                        <i class="bi bi-clock-history text-warning fs-4 mb-2"></i>
+                                        <h5 class="fw-bold mb-1" id="mis-tickets-pendientes">0</h5>
+                                        <small class="text-muted">Pendientes</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="section-card text-center" style="background: linear-gradient(135deg, #cce5ff 0%, #74b9ff 100%);">
+                                    <div class="card-body py-3">
+                                        <i class="bi bi-gear text-primary fs-4 mb-2"></i>
+                                        <h5 class="fw-bold mb-1" id="mis-tickets-proceso">0</h5>
+                                        <small class="text-muted">En Proceso</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="section-card text-center" style="background: linear-gradient(135deg, #d4edda 0%, #00b894 100%);">
+                                    <div class="card-body py-3">
+                                        <i class="bi bi-check-circle text-success fs-4 mb-2"></i>
+                                        <h5 class="fw-bold mb-1" id="mis-tickets-resueltos">0</h5>
+                                        <small class="text-muted">Resueltos</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="section-card text-center" style="background: linear-gradient(135deg, #f8d7da 0%, #e17055 100%);">
+                                    <div class="card-body py-3">
+                                        <i class="bi bi-key text-danger fs-4 mb-2"></i>
+                                        <h5 class="fw-bold mb-1" id="passwords-generadas">0</h5>
+                                        <small class="text-muted">Contraseñas</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Tickets -->
+                        <div class="section-card">
+                            <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h6 class="fw-bold text-primary mb-0">
+                                        <i class="bi bi-ticket-detailed me-2"></i>Mis Solicitudes de Soporte
+                                    </h6>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="cargarMisTickets()">
+                                            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                                        </button>
+                                        <button class="btn btn-custom-primary btn-sm" onclick="nuevaSolicitudSoporte()">
+                                            <i class="bi bi-plus-circle me-1"></i>Nueva Solicitud
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="card-body pt-3">
+                                <!-- Loading -->
+                                <div id="loading-soporte" class="text-center py-4" style="display: none;">
+                                    <div class="spinner-border text-primary" role="status">
+                                        <span class="visually-hidden">Cargando...</span>
+                                    </div>
+                                    <p class="text-muted mt-2 mb-0">Cargando mis solicitudes...</p>
+                                </div>
+
+                                <!-- Sin tickets -->
+                                <div id="sin-tickets" class="text-center py-5" style="display: none;">
+                                    <i class="bi bi-inbox text-muted fs-1 mb-3"></i>
+                                    <h6 class="text-muted mb-2">No tienes solicitudes de soporte</h6>
+                                    <p class="text-muted small mb-3">Cuando necesites ayuda, puedes crear una nueva solicitud</p>
+                                    <button class="btn btn-custom-primary btn-sm rounded-pill" onclick="nuevaSolicitudSoporte()">
+                                        <i class="bi bi-plus-circle me-1"></i>Crear Primera Solicitud
+                                    </button>
+                                </div>
+
+                                <!-- Lista de tickets -->
+                                <div id="lista-mis-tickets">
+                                    <!-- Los tickets se cargarán aquí dinámicamente -->
+                                </div>
+
+                                <!-- Botón Ver Más -->
+                                <div id="boton-ver-mas" class="text-center mt-3" style="display: none;">
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="toggleMostrarTodos()">
+                                        <i class="bi bi-chevron-down me-1" id="icon-toggle"></i>
+                                        <span id="texto-toggle">Ver Todas las Solicitudes</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Lista de tickets -->
-                    <div id="lista-mis-tickets">
-                        <!-- Los tickets se cargarán aquí dinámicamente con mejor visualización de respuestas -->
+                    <!-- ========== OTRAS SECCIONES (Placeholder) ========== -->
+                    <div id="seccion-reservas" class="content-section" style="display: none;">
+                        <div class="section-card">
+                            <div class="card-body p-5 text-center">
+                                <i class="bi bi-search text-muted fs-1 mb-3"></i>
+                                <h5 class="text-muted">Revisión de Salas</h5>
+                                <p class="text-muted">Esta sección mostrará las salas disponibles para reservar.</p>
+                                <button class="btn btn-custom-primary">Buscar Salas Disponibles</button>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Botón Ver Más (cuando hay más de 3 tickets) -->
-                    <div id="boton-ver-mas" class="text-center mt-3" style="display: none;">
-                        <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="toggleMostrarTodos()">
-                            <i class="bi bi-chevron-down me-1" id="icon-toggle"></i>
-                            <span id="texto-toggle">Ver Todas las Solicitudes</span>
-                        </button>
+                    <div id="seccion-nueva-reserva" class="content-section" style="display: none;">
+                        <div class="section-card">
+                            <div class="card-body p-5 text-center">
+                                <i class="bi bi-plus-circle text-muted fs-1 mb-3"></i>
+                                <h5 class="text-muted">Nueva Reserva</h5>
+                                <p class="text-muted">Formulario para crear una nueva reserva de sala.</p>
+                                <button class="btn btn-custom-primary">Crear Reserva</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="seccion-mis-qr" class="content-section" style="display: none;">
+                        <div class="section-card">
+                            <div class="card-body p-5 text-center">
+                                <i class="bi bi-qr-code text-muted fs-1 mb-3"></i>
+                                <h5 class="text-muted">Mis Códigos QR</h5>
+                                <p class="text-muted">Visualiza y gestiona tus códigos QR de reservas.</p>
+                                <button class="btn btn-custom-primary">Ver Códigos QR</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="seccion-capacitaciones" class="content-section" style="display: none;">
+                        <div class="section-card">
+                            <div class="card-body p-5 text-center">
+                                <i class="bi bi-mortarboard text-muted fs-1 mb-3"></i>
+                                <h5 class="text-muted">Capacitaciones</h5>
+                                <p class="text-muted">Materiales de capacitación y documentos de entrenamiento.</p>
+                                <button class="btn btn-custom-primary">Ver Capacitaciones</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="seccion-manual" class="content-section" style="display: none;">
+                        <div class="section-card">
+                            <div class="card-body p-5 text-center">
+                                <i class="bi bi-book text-muted fs-1 mb-3"></i>
+                                <h5 class="text-muted">Manual de Usuario</h5>
+                                <p class="text-muted">Guía completa de uso del sistema ROOMIT.</p>
+                                <button class="btn btn-custom-primary">Abrir Manual</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </main>
         </div>
-
-        <!-- 6. Notificaciones -->
-        <div class="mb-4">
-            <h5 class="fw-bold text-primary mb-4" style="letter-spacing: 0.5px;">
-                <i class="bi bi-bell me-2"></i>Notificaciones
-            </h5>
-            <div class="alert alert-success border-0 rounded-4 d-flex align-items-start p-4" 
-                 style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%); box-shadow: 0 4px 15px rgba(76, 175, 80, 0.2);">
-                <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" 
-                     style="width: 50px; height: 50px; min-width: 50px;">
-                    <i class="bi bi-check-circle-fill fs-4 text-success"></i>
-                </div>
-                <div class="flex-grow-1">
-                    <h6 class="fw-bold text-success mb-2">Reserva Confirmada</h6>
-                    <p class="mb-2 text-dark fw-medium">Su reserva para la Sala 101 ha sido confirmada</p>
-                    <small class="text-muted">
-                        <i class="bi bi-calendar-event me-1"></i>2024-05-19 18:03
-                    </small>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- MODAL: Nueva Solicitud de Soporte -->
+    <!-- ========== MODAL: Nueva Solicitud de Soporte ========== -->
     <div class="modal fade" id="modalNuevaSolicitud" tabindex="-1" aria-labelledby="modalNuevaSolicitudLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 rounded-4">
@@ -392,7 +619,6 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                                 <option value="password_recovery">🔑 Recuperar Contraseña</option>
                                 <option value="technical_issue">⚙️ Problema Técnico</option>
                                 <option value="general_support">💬 Consulta General</option>
-                                <option value="training_request">📚 Solicitar Capacitación</option>
                             </select>
                         </div>
                         <div class="mb-4">
@@ -400,60 +626,56 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                                 <i class="bi bi-envelope me-1"></i>Tu Email
                             </label>
                             <input type="email" class="form-control rounded-3" id="emailSolicitud" 
-                                   placeholder="tu.email@ejemplo.com" required>
+                                   value="<?= htmlspecialchars($email_usuario) ?>" required>
                         </div>
                         <div class="mb-4">
                             <label for="motivoSolicitud" class="form-label fw-semibold">
-                                <i class="bi bi-chat-dots me-1"></i>Describe tu problema o consulta
+                                <i class="bi bi-chat-dots me-1"></i>Describe tu consulta o problema
                             </label>
-                            <textarea class="form-control rounded-3" id="motivoSolicitud" rows="6" 
-                                      placeholder="Explica detalladamente qué necesitas o qué problema tienes..." required></textarea>
-                            <div class="form-text">
-                                <i class="bi bi-info-circle me-1"></i>
-                                Proporciona toda la información posible para ayudarte mejor
-                            </div>
+                            <textarea class="form-control rounded-3" id="motivoSolicitud" rows="4" 
+                                      placeholder="Explica detalladamente tu solicitud..." required></textarea>
+                            <div class="form-text">Mínimo 10 caracteres. Mientras más detalles proporciones, mejor podremos ayudarte.</div>
                         </div>
-                        <div class="mb-3">
+                        <div class="mb-4">
                             <label for="prioridadSolicitud" class="form-label fw-semibold">
-                                <i class="bi bi-speedometer2 me-1"></i>Urgencia
+                                <i class="bi bi-exclamation-triangle me-1"></i>Prioridad
                             </label>
-                            <select class="form-select rounded-3" id="prioridadSolicitud" required>
-                                <option value="baja">🟢 Baja - Puedo esperar varios días</option>
-                                <option value="media" selected>🟡 Media - Necesito ayuda en 1-2 días</option>
-                                <option value="alta">🟠 Alta - Es importante, necesito ayuda hoy</option>
-                                <option value="urgente">🔴 Urgente - No puedo trabajar sin esto</option>
+                            <select class="form-select rounded-3" id="prioridadSolicitud">
+                                <option value="media">📋 Normal - Respuesta en 24-48 horas</option>
+                                <option value="alta">⚡ Alta - Necesito respuesta pronto</option>
+                                <option value="urgente">🚨 Urgente - Problema crítico</option>
                             </select>
                         </div>
                     </form>
                 </div>
-                <div class="modal-footer bg-light border-0 rounded-bottom-4 p-4">
-                    <button type="button" class="btn btn-outline-secondary px-4 rounded-3" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-2"></i>Cancelar
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cancelar
                     </button>
-                    <button type="button" class="btn btn-primary px-4 rounded-3" onclick="enviarSolicitudSoporte()">
-                        <i class="bi bi-send me-2"></i>Enviar Solicitud
+                    <button type="button" class="btn btn-custom-primary rounded-pill" onclick="enviarSolicitudSoporte()">
+                        <i class="bi bi-send me-1"></i>Enviar Solicitud
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- MODAL: Ver Detalles del Ticket -->
-    <div class="modal fade" id="modalVerTicket" tabindex="-1" aria-labelledby="modalVerTicketLabel" aria-hidden="true">
+    <!-- ========== MODAL: Detalles del Ticket ========== -->
+    <div class="modal fade" id="modalDetallesTicket" tabindex="-1" aria-labelledby="modalDetallesTicketLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content border-0 rounded-4">
-                <div class="modal-header border-0 rounded-top-4" id="headerModalTicket">
-                    <h5 class="modal-title fw-bold text-white" id="modalVerTicketLabel">
+                <div class="modal-header bg-primary bg-gradient text-white border-0 rounded-top-4" id="headerModalTicket">
+                    <h5 class="modal-title fw-bold" id="modalDetallesTicketLabel">
                         <i class="bi bi-ticket-detailed me-2"></i>Detalles del Ticket
                     </h5>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                 </div>
                 <div class="modal-body p-4" id="contenidoModalTicket">
-                    <!-- El contenido se carga dinámicamente -->
+                    <!-- Se llenará dinámicamente -->
                 </div>
-                <div class="modal-footer bg-light border-0 rounded-bottom-4">
-                    <button type="button" class="btn btn-outline-secondary rounded-3" data-bs-dismiss="modal">
-                        <i class="bi bi-x-lg me-2"></i>Cerrar
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-outline-secondary rounded-pill" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Cerrar
                     </button>
                 </div>
             </div>
@@ -461,142 +683,237 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
     </div>
 
     <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+
     <script>
-        // ========== VARIABLES GLOBALES MEJORADAS ==========
+        // ========== VARIABLES GLOBALES ==========
+        const emailUsuario = '<?= $email_usuario ?>';
         const API_SOPORTE = '../../Backend/api/SoporteTecnico/Metodos-soporte.php';
         let misTickets = [];
-        let emailUsuario = '<?php echo $email_usuario; ?>';
         let mostrandoTodos = false;
-        let ticketsConRespuestasNuevas = []; // ✅ NUEVO
 
-        // ========== CARGAR AL INICIALIZAR ==========
+        // ========== INICIALIZACIÓN ==========
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('📧 Email del usuario:', emailUsuario);
+            cargarDashboard();
+            mostrarSeccion('resumen');
             cargarMisTickets();
         });
 
-        // ========== CARGAR MIS TICKETS MEJORADO ==========
-        async function cargarMisTickets() {
+        // ========== NAVEGACIÓN ENTRE SECCIONES ==========
+        function mostrarSeccion(seccion) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
+            
+            // Mostrar la sección seleccionada
+            document.getElementById(`seccion-${seccion}`).style.display = 'block';
+            
+            // Actualizar navegación activa
+            document.querySelectorAll('.nav-link-custom').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Activar el enlace correspondiente
+            const activeLink = document.querySelector(`[href="#${seccion}"]`);
+            if (activeLink) {
+                activeLink.classList.add('active');
+            }
+            
+            // Actualizar breadcrumb
+            const breadcrumbTextos = {
+                'resumen': 'Resumen',
+                'reservas': 'Revisar Salas',
+                'nueva-reserva': 'Nueva Reserva',
+                'mis-qr': 'Mis Códigos QR',
+                'soporte': 'Soporte Técnico',
+                'capacitaciones': 'Capacitaciones',
+                'manual': 'Manual de Usuario'
+            };
+            
+            document.getElementById('breadcrumb-actual').textContent = breadcrumbTextos[seccion] || 'Sección';
+            
+            // Cargar datos específicos según la sección
+            if (seccion === 'soporte') {
+                cargarMisTickets();
+            }
+        }
+
+        // ========== CARGAR DASHBOARD ==========
+        async function cargarDashboard() {
             try {
-                document.getElementById('loading-soporte').style.display = 'block';
-                document.getElementById('sin-tickets').style.display = 'none';
-                document.getElementById('lista-mis-tickets').style.display = 'none';
-                document.getElementById('boton-ver-mas').style.display = 'none';
+                // Simular carga de estadísticas (aquí conectarías con tus APIs reales)
+                document.getElementById('total-reservas-activas').textContent = '3';
+                document.getElementById('salas-disponibles').textContent = '12';
+                document.getElementById('tickets-pendientes').textContent = '1';
+                document.getElementById('qr-generados').textContent = '3';
+                
+                // Actualizar stats del sidebar
+                document.getElementById('stat-reservas').textContent = '3';
+                document.getElementById('stat-tickets').textContent = '1';
+                
+                cargarMisReservas();
+                cargarNotificaciones();
+                
+            } catch (error) {
+                console.error('Error al cargar dashboard:', error);
+            }
+        }
 
-                console.log('🔍 Buscando tickets para:', emailUsuario);
+        // ========== CARGAR MIS RESERVAS ==========
+        function cargarMisReservas() {
+            const container = document.getElementById('mis-reservas-container');
+            
+            // Datos de ejemplo (reemplazar con llamada a API real)
+            const reservasEjemplo = `
+                <div class="card border-0 mb-3 shadow-sm rounded-3" style="border-left: 4px solid #198754 !important;">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h6 class="card-title fw-bold text-primary mb-2">
+                                    <i class="bi bi-door-closed me-2"></i>Sala 101 - Matemáticas
+                                </h6>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar-event text-primary me-1"></i>
+                                        Hoy, 2024-03-20
+                                    </small>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock text-primary me-1"></i>
+                                        09:00 - 11:00
+                                    </small>
+                                    <span class="badge bg-success">Confirmada</span>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="d-flex flex-column gap-2">
+                                    <button class="btn btn-primary btn-sm rounded-pill">
+                                        <i class="bi bi-qr-code me-1"></i>Ver QR
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm rounded-pill">
+                                        <i class="bi bi-x-circle me-1"></i>Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = reservasEjemplo;
+        }
 
-                const response = await fetch(`${API_SOPORTE}`);
+        // ========== CARGAR NOTIFICACIONES ==========
+        function cargarNotificaciones() {
+            const container = document.getElementById('notificaciones-container');
+            
+            const notificacionesEjemplo = `
+                <div class="alert alert-success border-0 rounded-4 d-flex align-items-start p-3 mb-3" 
+                     style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                    <div class="bg-success bg-opacity-10 rounded-circle d-flex align-items-center justify-content-center me-3" 
+                         style="width: 40px; height: 40px; min-width: 40px;">
+                        <i class="bi bi-check-circle-fill fs-5 text-success"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <h6 class="fw-bold text-success mb-1">Reserva Confirmada</h6>
+                        <p class="mb-1 text-dark small">Su reserva para la Sala 101 ha sido confirmada</p>
+                        <small class="text-muted">
+                            <i class="bi bi-calendar-event me-1"></i>Hace 2 horas
+                        </small>
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = notificacionesEjemplo;
+        }
+
+        // ========== FUNCIONES DE SOPORTE (MANTENER TODAS LAS EXISTENTES) ==========
+        
+        async function cargarMisTickets() {
+            const loadingElement = document.getElementById('loading-soporte');
+            const sinTicketsElement = document.getElementById('sin-tickets');
+            const listaElement = document.getElementById('lista-mis-tickets');
+            
+            try {
+                loadingElement.style.display = 'block';
+                sinTicketsElement.style.display = 'none';
+                listaElement.style.display = 'none';
+
+                const response = await fetch(`${API_SOPORTE}?email_solicitante=${encodeURIComponent(emailUsuario)}`);
                 const data = await response.json();
 
-                if (data.success && data.data && data.data.length > 0) {
-                    misTickets = data.data.filter(ticket => 
-                        ticket.email_solicitante && 
-                        ticket.email_solicitante.toLowerCase() === emailUsuario.toLowerCase()
-                    );
-
-                    console.log('🎫 Mis tickets filtrados:', misTickets);
-
-                    if (misTickets.length > 0) {
-                        // ✅ DETECTAR RESPUESTAS NUEVAS
-                        detectarRespuestasNuevas(misTickets);
+                if (data.success && data.data) {
+                    misTickets = data.data.filter(ticket => ticket.email_solicitante === emailUsuario);
+                    
+                    if (misTickets.length === 0) {
+                        sinTicketsElement.style.display = 'block';
+                    } else {
                         renderizarMisTickets(misTickets);
                         actualizarEstadisticasSoporte(misTickets);
-                    } else {
-                        mostrarSinTickets();
+                        verificarRespuestasPendientes(misTickets);
                     }
                 } else {
-                    mostrarSinTickets();
+                    console.error('Error en la respuesta:', data);
+                    sinTicketsElement.style.display = 'block';
                 }
 
             } catch (error) {
-                console.error('❌ Error al cargar tickets:', error);
-                mostrarSinTickets();
+                console.error('Error al cargar tickets:', error);
+                sinTicketsElement.style.display = 'block';
             } finally {
-                document.getElementById('loading-soporte').style.display = 'none';
+                loadingElement.style.display = 'none';
             }
         }
 
-        // ========== DETECTAR RESPUESTAS NUEVAS ==========
-        function detectarRespuestasNuevas(tickets) {
-            // Filtrar tickets que tienen respuesta del admin
-            ticketsConRespuestasNuevas = tickets.filter(ticket => 
-                ticket.respuesta_admin && 
-                ticket.respuesta_admin.trim() !== '' &&
-                ticket.estado !== 'cerrado' // No mostrar cerrados
-            );
-
-            console.log('📩 Tickets con respuestas:', ticketsConRespuestasNuevas);
-
-            if (ticketsConRespuestasNuevas.length > 0) {
-                mostrarSeccionRespuestasPendientes(ticketsConRespuestasNuevas);
-            } else {
-                ocultarSeccionRespuestasPendientes();
-            }
-        }
-
-        // ========== MOSTRAR SECCIÓN DE RESPUESTAS PENDIENTES ==========
-        function mostrarSeccionRespuestasPendientes(ticketsConRespuestas) {
-            const seccion = document.getElementById('seccion-respuestas-pendientes');
-            const badge = document.getElementById('badge-respuestas-nuevas');
-            const count = document.getElementById('count-respuestas-nuevas');
-            const lista = document.getElementById('lista-respuestas-pendientes');
-
-            // Actualizar contador
-            count.textContent = ticketsConRespuestas.length;
-            badge.style.display = 'inline-block';
-
-            // Generar lista de respuestas
-            lista.innerHTML = ticketsConRespuestas.map(ticket => `
-                <div class="d-flex justify-content-between align-items-center p-2 mb-1 bg-white rounded-3">
-                    <div class="flex-grow-1">
-                        <small class="fw-semibold text-success">
-                            <i class="bi bi-ticket-detailed me-1"></i>
-                            Ticket #${ticket.id} - ${formatearTipo(ticket.tipo)}
-                        </small>
-                        <div class="text-muted small text-truncate" style="max-width: 400px;">
-                            ${ticket.respuesta_admin.substring(0, 100)}${ticket.respuesta_admin.length > 100 ? '...' : ''}
-                        </div>
-                    </div>
-                    <button class="btn btn-outline-success btn-sm rounded-pill ms-2" onclick="verDetallesTicket(${ticket.id})">
-                        <i class="bi bi-eye me-1"></i>Leer
-                    </button>
-                </div>
-            `).join('');
-
-            seccion.style.display = 'block';
-        }
-
-        // ========== OCULTAR SECCIÓN DE RESPUESTAS ==========
-        function ocultarSeccionRespuestasPendientes() {
-            document.getElementById('seccion-respuestas-pendientes').style.display = 'none';
-            document.getElementById('badge-respuestas-nuevas').style.display = 'none';
-        }
-
-        // ========== VER TODAS LAS RESPUESTAS ==========
-        function verTodasRespuestas() {
-            mostrandoTodos = true;
-            renderizarMisTickets(misTickets);
+        // ========== VERIFICAR RESPUESTAS PENDIENTES ==========
+        function verificarRespuestasPendientes(tickets) {
+            const ticketsConRespuesta = tickets.filter(t => t.respuesta_admin && !t.respuesta_leida);
             
-            // Scroll a la lista de tickets
-            document.getElementById('lista-mis-tickets').scrollIntoView({ 
-                behavior: 'smooth', 
-                block: 'start' 
-            });
+            if (ticketsConRespuesta.length > 0) {
+                // Mostrar badge en navbar
+                const badgeNavbar = document.getElementById('badge-respuestas-nuevas');
+                const countNavbar = document.getElementById('count-respuestas-nuevas');
+                const badgeSidebar = document.getElementById('sidebar-badge-respuestas');
+                
+                badgeNavbar.style.display = 'flex';
+                countNavbar.textContent = ticketsConRespuesta.length;
+                badgeSidebar.style.display = 'inline';
+                badgeSidebar.textContent = ticketsConRespuesta.length;
+                
+                // Mostrar sección de respuestas pendientes
+                const seccionRespuestas = document.getElementById('seccion-respuestas-pendientes');
+                const listaRespuestas = document.getElementById('lista-respuestas-pendientes');
+                
+                listaRespuestas.innerHTML = ticketsConRespuesta.map(ticket => `
+                    <div class="mb-2">
+                        <strong>Ticket #${ticket.id}:</strong> 
+                        <span class="text-truncate d-inline-block" style="max-width: 200px;">
+                            ${ticket.respuesta_admin.substring(0, 50)}...
+                        </span>
+                        <button class="btn btn-sm btn-outline-success ms-2" onclick="verDetallesTicket(${ticket.id})">
+                            Ver
+                        </button>
+                    </div>
+                `).join('');
+                
+                seccionRespuestas.style.display = 'block';
+            } else {
+                // Ocultar badges y sección
+                document.getElementById('badge-respuestas-nuevas').style.display = 'none';
+                document.getElementById('sidebar-badge-respuestas').style.display = 'none';
+                document.getElementById('seccion-respuestas-pendientes').style.display = 'none';
+            }
         }
 
-        // ========== RENDERIZAR TICKETS MEJORADO ==========
+        // ========== RENDERIZAR TICKETS ==========
         function renderizarMisTickets(tickets) {
             const container = document.getElementById('lista-mis-tickets');
             
             if (tickets.length === 0) {
-                mostrarSinTickets();
+                document.getElementById('sin-tickets').style.display = 'block';
                 return;
             }
 
-            const ticketsAMostrar = mostrandoTodos ? tickets : tickets.slice(0, 3);
             const hayMasTickets = tickets.length > 3;
+            const ticketsAMostrar = mostrandoTodos ? tickets : tickets.slice(0, 3);
 
             const infoTotal = hayMasTickets && !mostrandoTodos ? 
                 `<div class="alert alert-info alert-sm mb-3">
@@ -605,11 +922,11 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                 </div>` : '';
 
             container.innerHTML = infoTotal + ticketsAMostrar.map(ticket => `
-                <div class="card border-0 mb-3 shadow-sm rounded-3 ${ticket.respuesta_admin ? 'border-success' : ''}" 
+                <div class="card border-0 mb-3 shadow-sm rounded-3 ticket-card ${ticket.respuesta_admin ? 'border-success' : ''}" 
                      style="border-left: 4px solid ${getColorEstado(ticket.estado)} !important; 
                             ${ticket.respuesta_admin ? 'box-shadow: 0 4px 15px rgba(40, 167, 69, 0.2) !important;' : ''}">
                     <div class="card-body p-3">
-                        <!-- ✅ NUEVA: Alerta de respuesta en la parte superior -->
+                        <!-- Alerta de respuesta en la parte superior -->
                         ${ticket.respuesta_admin ? `
                             <div class="alert alert-success py-2 px-3 mb-3 border-0 rounded-3" 
                                  style="background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);">
@@ -711,13 +1028,7 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
             }
         }
 
-        // ========== VER TODAS LAS SOLICITUDES ==========
-        function verTodasSolicitudes() {
-            mostrandoTodos = true;
-            renderizarMisTickets(misTickets);
-        }
-
-        // ========== NUEVA SOLICITUD CORREGIDA ==========
+        // ========== NUEVA SOLICITUD ==========
         function nuevaSolicitudSoporte() {
             document.getElementById('emailSolicitud').value = emailUsuario;
             new bootstrap.Modal(document.getElementById('modalNuevaSolicitud')).show();
@@ -730,7 +1041,7 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
         async function enviarSolicitudSoporte() {
             try {
                 const solicitud = {
-                    email: emailUsuario, // ✅ USAR EMAIL REAL
+                    email: emailUsuario,
                     tipo: document.getElementById('tipoSolicitud').value,
                     motivo: document.getElementById('motivoSolicitud').value,
                     prioridad: document.getElementById('prioridadSolicitud').value
@@ -764,7 +1075,6 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                     bootstrap.Modal.getInstance(document.getElementById('modalNuevaSolicitud')).hide();
                     document.getElementById('formNuevaSolicitud').reset();
                     
-                    // ✅ RECARGAR TICKETS DESPUÉS DE CREAR UNO NUEVO
                     setTimeout(() => {
                         cargarMisTickets();
                     }, 1000);
@@ -782,7 +1092,7 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
             }
         }
 
-        // ========== RESTO DE FUNCIONES (mantener las existentes) ==========
+        // ========== ACTUALIZAR ESTADÍSTICAS DE SOPORTE ==========
         function actualizarEstadisticasSoporte(tickets) {
             const stats = {
                 pendientes: tickets.filter(t => t.estado === 'pendiente').length,
@@ -848,79 +1158,52 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                                 <div class="bg-white rounded-3 p-3 border border-success border-opacity-25">
                                     ${ticket.respuesta_admin}
                                 </div>
-                                ${ticket.fecha_respuesta ? `
-                                    <small class="text-muted d-block mt-2">
-                                        <i class="bi bi-calendar-event me-1"></i>
-                                        Respondido el ${formatearFecha(ticket.fecha_respuesta)}
-                                    </small>
-                                ` : ''}
                             </div>
                         ` : `
-                            <div class="alert alert-info border-0 rounded-3">
-                                <i class="bi bi-clock me-2"></i>
-                                <strong>Estado:</strong> Tu solicitud está siendo revisada. Te notificaremos cuando tengamos una respuesta.
+                            <div class="alert alert-info border-0 rounded-4">
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-clock-history text-info fs-5 me-3"></i>
+                                    <div>
+                                        <h6 class="fw-bold text-info mb-1">En Espera</h6>
+                                        <small class="text-info">El administrador revisará tu solicitud pronto</small>
+                                    </div>
+                                </div>
                             </div>
                         `}
-                        
+
                         ${ticket.nueva_password_generada ? `
                             <div class="alert alert-warning border-0 rounded-4 shadow-sm">
-                                <h6 class="fw-bold mb-2">
+                                <h6 class="fw-bold text-warning mb-3">
                                     <i class="bi bi-key me-2"></i>Contraseña Temporal Generada
                                 </h6>
-                                <div class="input-group">
-                                    <input type="password" class="form-control" value="${ticket.nueva_password_generada}" id="passwordTemp">
-                                    <button class="btn btn-outline-primary" onclick="togglePassword()">
-                                        <i class="bi bi-eye" id="eyeIcon"></i>
-                                    </button>
-                                    <button class="btn btn-outline-secondary" onclick="copiarPassword('${ticket.nueva_password_generada}')">
-                                        <i class="bi bi-clipboard"></i>
-                                    </button>
+                                <div class="bg-white rounded-3 p-3 border border-warning border-opacity-25">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <code class="fs-5 fw-bold text-danger">${ticket.nueva_password_generada}</code>
+                                        <button class="btn btn-warning btn-sm" onclick="copiarPassword('${ticket.nueva_password_generada}')">
+                                            <i class="bi bi-clipboard me-1"></i>Copiar
+                                        </button>
+                                    </div>
                                 </div>
-                                <small class="text-muted mt-2 d-block">
-                                    <i class="bi bi-info-circle me-1"></i>
-                                    Usa esta contraseña para acceder al sistema
-                                </small>
+                                <div class="mt-2">
+                                    <small class="text-warning">
+                                        <i class="bi bi-exclamation-triangle me-1"></i>
+                                        Usa esta contraseña temporal para ingresar al sistema y cámbiala inmediatamente.
+                                    </small>
+                                </div>
                             </div>
                         ` : ''}
                     </div>
                 </div>
             `;
 
-            new bootstrap.Modal(document.getElementById('modalVerTicket')).show();
+            new bootstrap.Modal(document.getElementById('modalDetallesTicket')).show();
         }
 
         // ========== FUNCIONES AUXILIARES ==========
-        function mostrarSinTickets() {
-            document.getElementById('sin-tickets').style.display = 'block';
-            document.getElementById('lista-mis-tickets').style.display = 'none';
-            document.getElementById('boton-ver-mas').style.display = 'none';
-            actualizarEstadisticasSoporte([]);
-        }
-
-        function mostrarPassword(password) {
-            Swal.fire({
-                title: 'Tu Contraseña Temporal',
-                html: `
-                    <div class="input-group">
-                        <input type="text" class="form-control text-center fs-5 fw-bold" value="${password}" readonly>
-                        <button class="btn btn-outline-primary" onclick="navigator.clipboard.writeText('${password}')">
-                            <i class="bi bi-clipboard"></i>
-                        </button>
-                    </div>
-                    <p class="text-muted mt-3 mb-0">
-                        <i class="bi bi-info-circle me-1"></i>
-                        Usa esta contraseña para acceder al sistema
-                    </p>
-                `,
-                icon: 'info',
-                confirmButtonText: 'Entendido'
-            });
-        }
-
         function getColorEstado(estado) {
             const colores = {
                 'pendiente': '#ffc107',
-                'en_proceso': '#0d6efd', 
+                'en_proceso': '#0d6efd',
                 'resuelto': '#198754',
                 'cerrado': '#6c757d'
             };
@@ -929,46 +1212,45 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
 
         function getBadgeEstado(estado) {
             const badges = {
-                'pendiente': '<span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>Pendiente</span>',
+                'pendiente': '<span class="badge bg-warning"><i class="bi bi-clock-history me-1"></i>Pendiente</span>',
                 'en_proceso': '<span class="badge bg-primary"><i class="bi bi-gear me-1"></i>En Proceso</span>',
                 'resuelto': '<span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Resuelto</span>',
                 'cerrado': '<span class="badge bg-secondary"><i class="bi bi-x-circle me-1"></i>Cerrado</span>'
             };
-            return badges[estado] || badges['pendiente'];
+            return badges[estado] || '<span class="badge bg-secondary">Desconocido</span>';
         }
 
         function getBadgePrioridad(prioridad) {
             const badges = {
-                'baja': '<span class="badge bg-light text-dark border">Baja</span>',
+                'baja': '<span class="badge bg-light text-dark">Baja</span>',
                 'media': '<span class="badge bg-info">Media</span>',
-                'alta': '<span class="badge bg-warning text-dark">Alta</span>',
+                'alta': '<span class="badge bg-warning">Alta</span>',
                 'urgente': '<span class="badge bg-danger">Urgente</span>'
             };
-            return badges[prioridad] || badges['media'];
+            return badges[prioridad] || '<span class="badge bg-light text-dark">Media</span>';
         }
 
         function getIconoTipo(tipo) {
             const iconos = {
-                'password_recovery': '<i class="bi bi-key-fill text-warning fs-5"></i>',
-                'technical_issue': '<i class="bi bi-gear-fill text-danger fs-5"></i>',
-                'general_support': '<i class="bi bi-chat-dots-fill text-primary fs-5"></i>',
-                'training_request': '<i class="bi bi-mortarboard-fill text-success fs-5"></i>'
+                'password_recovery': '<div class="bg-warning bg-opacity-10 rounded-circle p-2"><i class="bi bi-key text-warning fs-5"></i></div>',
+                'technical_issue': '<div class="bg-danger bg-opacity-10 rounded-circle p-2"><i class="bi bi-tools text-danger fs-5"></i></div>',
+                'general_support': '<div class="bg-info bg-opacity-10 rounded-circle p-2"><i class="bi bi-chat-dots text-info fs-5"></i></div>'
             };
-            return iconos[tipo] || iconos['general_support'];
+            return iconos[tipo] || '<div class="bg-secondary bg-opacity-10 rounded-circle p-2"><i class="bi bi-question text-secondary fs-5"></i></div>';
         }
 
         function formatearTipo(tipo) {
             const tipos = {
-                'password_recovery': 'Recuperar Contraseña',
-                'technical_issue': 'Problema Técnico', 
-                'general_support': 'Consulta General',
-                'training_request': 'Solicitar Capacitación'
+                'password_recovery': '🔑 Recuperar Contraseña',
+                'technical_issue': '⚙️ Problema Técnico',
+                'general_support': '💬 Consulta General'
             };
             return tipos[tipo] || 'Consulta General';
         }
 
-        function formatearFecha(fecha) {
-            return new Date(fecha).toLocaleDateString('es-ES', {
+        function formatearFecha(fechaString) {
+            const fecha = new Date(fechaString);
+            return fecha.toLocaleDateString('es-ES', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -977,17 +1259,32 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
             });
         }
 
-        function togglePassword() {
-            const input = document.getElementById('passwordTemp');
-            const icon = document.getElementById('eyeIcon');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.className = 'bi bi-eye-slash';
-            } else {
-                input.type = 'password';
-                icon.className = 'bi bi-eye';
-            }
+        function mostrarPassword(password) {
+            Swal.fire({
+                title: 'Contraseña Temporal',
+                html: `
+                    <div class="p-3">
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Esta es tu contraseña temporal
+                        </div>
+                        <div class="bg-light rounded p-3 mb-3">
+                            <code class="fs-4 fw-bold text-danger">${password}</code>
+                        </div>
+                        <small class="text-muted">
+                            Úsala para ingresar al sistema y cámbiala inmediatamente por seguridad.
+                        </small>
+                    </div>
+                `,
+                showCancelButton: true,
+                confirmButtonText: 'Copiar Contraseña',
+                cancelButtonText: 'Cerrar',
+                focusCancel: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    copiarPassword(password);
+                }
+            });
         }
 
         function copiarPassword(password) {
@@ -995,15 +1292,63 @@ $email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemp
                 Swal.fire({
                     icon: 'success',
                     title: '¡Copiado!',
-                    text: 'Contraseña copiada al portapapeles',
-                    timer: 1500,
+                    text: 'La contraseña ha sido copiada al portapapeles',
+                    timer: 2000,
                     showConfirmButton: false
+                });
+            }).catch(() => {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo copiar la contraseña'
                 });
             });
         }
-    </script>
 
-    <!-- JS personalizado -->
-    <script src="js/gestion-usuarios.js"></script>
+        function verTodasRespuestas() {
+            mostrandoTodos = true;
+            renderizarMisTickets(misTickets);
+            mostrarSeccion('soporte');
+        }
+
+        function verTodasSolicitudes() {
+            mostrandoTodos = true;
+            renderizarMisTickets(misTickets);
+        }
+
+        function verTodasReservas() {
+            mostrarSeccion('reservas');
+        }
+
+        function cerrarSesion() {
+            Swal.fire({
+                title: '¿Cerrar Sesión?',
+                text: 'Se cerrará tu sesión actual',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cerrar sesión',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirigir a logout
+                    window.location.href = '../../login.php';
+                }
+            });
+        }
+
+        // ========== EVENT LISTENERS ADICIONALES ==========
+        document.getElementById('btn-notificaciones').addEventListener('click', function() {
+            if (misTickets.some(t => t.respuesta_admin)) {
+                mostrarSeccion('soporte');
+            }
+        });
+
+        // Actualizar tickets cada 30 segundos
+        setInterval(() => {
+            if (document.getElementById('seccion-soporte').style.display !== 'none') {
+                cargarMisTickets();
+            }
+        }, 30000);
+    </script>
 </body>
 </html>
