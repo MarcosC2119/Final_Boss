@@ -1111,6 +1111,13 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                     await crearNuevaReserva();
                 });
             }
+            
+            // Inicializar funciones perfeccionadas
+            setTimeout(() => {
+                initBusquedaEnTiempoReal();
+                actualizarIconosFavoritos();
+                actualizarIndicadorComparador();
+            }, 1000);
         });
 
         // ========== FUNCIÓN CORREGIDA PARA CREAR NUEVA RESERVA ==========
@@ -2724,7 +2731,7 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
             }
         }
 
-        // ========== FUNCIÓN PARA MOSTRAR SALAS ENCONTRADAS ==========
+        // ========== FUNCIÓN MEJORADA PARA MOSTRAR SALAS ==========
         function mostrarSalasEncontradas(salas, fecha = null) {
             const container = document.getElementById('lista-salas-disponibles');
             
@@ -2747,6 +2754,7 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
 
                 const estadoClass = sala.estado === 'disponible' ? 'success' : 'warning';
                 const estadoIcon = sala.estado === 'disponible' ? 'check-circle' : 'exclamation-triangle';
+                const isFavorito = esFavorito(sala.id);
                 
                 // Si hay fecha seleccionada, mostrar disponibilidad específica
                 let disponibilidadInfo = '';
@@ -2772,7 +2780,7 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                 }
 
                 return `
-                    <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="col-lg-6 col-xl-4 mb-4" data-sala-id="${sala.id}">
                         <div class="card h-100 border-0 shadow-sm card-hover">
                             <div class="card-body p-4">
                                 <div class="d-flex justify-content-between align-items-start mb-3">
@@ -2782,10 +2790,15 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                                             ${sala.tipo.charAt(0).toUpperCase() + sala.tipo.slice(1)}
                                         </span>
                                     </div>
-                                    <span class="badge bg-${estadoClass} bg-opacity-10 text-${estadoClass}">
-                                        <i class="bi bi-${estadoIcon} me-1"></i>
-                                        ${sala.estado.charAt(0).toUpperCase() + sala.estado.slice(1)}
-                                    </span>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-link p-0" onclick="toggleFavorito(${sala.id}, '${sala.nombre}')" title="Favorito">
+                                            <i class="icono-favorito bi ${isFavorito ? 'bi-heart-fill text-danger' : 'bi-heart text-muted'}"></i>
+                                        </button>
+                                        <span class="badge bg-${estadoClass} bg-opacity-10 text-${estadoClass}">
+                                            <i class="bi bi-${estadoIcon} me-1"></i>
+                                            ${sala.estado.charAt(0).toUpperCase() + sala.estado.slice(1)}
+                                        </span>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">
@@ -2808,12 +2821,31 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                                 ${disponibilidadInfo}
 
                                 <div class="d-grid gap-2">
-                                    <button class="btn btn-primary" onclick="reservarSala(${sala.id}, '${sala.nombre}')">
-                                        <i class="bi bi-calendar-plus me-2"></i>Reservar Sala
-                                    </button>
-                                    <button class="btn btn-outline-secondary" onclick="verDetallesSala(${sala.id})">
-                                        <i class="bi bi-info-circle me-2"></i>Ver Detalles
-                                    </button>
+                                    <div class="row g-2">
+                                        <div class="col-6">
+                                            <button class="btn btn-primary w-100" onclick="reservarSala(${sala.id}, '${sala.nombre}')">
+                                                <i class="bi bi-calendar-plus me-1"></i>Reservar
+                                            </button>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="dropdown w-100">
+                                                <button class="btn btn-outline-secondary dropdown-toggle w-100" data-bs-toggle="dropdown">
+                                                    <i class="bi bi-three-dots"></i>
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    <li><button class="dropdown-item" onclick="mostrarCalendarioDisponibilidad(${sala.id}, '${sala.nombre}')">
+                                                        <i class="bi bi-calendar3 me-2"></i>Ver Calendario
+                                                    </button></li>
+                                                    <li><button class="dropdown-item" onclick="agregarAComparador(${sala.id}, '${sala.nombre}')">
+                                                        <i class="bi bi-bar-chart me-2"></i>Comparar
+                                                    </button></li>
+                                                    <li><button class="dropdown-item" onclick="verDetallesSala(${sala.id})">
+                                                        <i class="bi bi-info-circle me-2"></i>Ver Detalles
+                                                    </button></li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -2829,14 +2861,22 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                                 <i class="bi bi-building me-2"></i>
                                 Se encontraron ${salas.length} sala${salas.length !== 1 ? 's' : ''}
                             </h6>
-                            <button class="btn btn-outline-primary btn-sm" onclick="limpiarFiltros()">
-                                <i class="bi bi-arrow-clockwise me-1"></i>Limpiar Filtros
-                            </button>
+                            <div class="btn-group btn-group-sm">
+                                <button class="btn btn-outline-primary" onclick="mostrarSalasFavoritas()">
+                                    <i class="bi bi-heart me-1"></i>Favoritos
+                                </button>
+                                <button class="btn btn-outline-secondary" onclick="limpiarFiltros()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Limpiar
+                                </button>
+                            </div>
                         </div>
                     </div>
                     ${salasHTML}
                 </div>
             `;
+            
+            // Actualizar iconos de favoritos después de renderizar
+            setTimeout(actualizarIconosFavoritos, 100);
         }
 
         // ========== FUNCIÓN PARA RESERVAR SALA DIRECTAMENTE ==========
@@ -2893,6 +2933,541 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                 month: 'long',
                 day: 'numeric'
             });
+        }
+
+        // ========== BÚSQUEDA EN TIEMPO REAL ==========
+        function initBusquedaEnTiempoReal() {
+            const searchInput = document.getElementById('busqueda-salas-rapida');
+            if (!searchInput) {
+                // Crear el input de búsqueda si no existe
+                const filtrosContainer = document.querySelector('#seccion-reservas .card-body .row');
+                if (filtrosContainer) {
+                    const searchHTML = `
+                        <div class="col-12 mb-3">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-primary text-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" class="form-control" id="busqueda-salas-rapida" 
+                                       placeholder="Buscar salas por nombre, tipo o características...">
+                                <button class="btn btn-outline-secondary" type="button" onclick="limpiarBusqueda()">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <div id="sugerencias-busqueda" class="list-group mt-2" style="display: none;"></div>
+                        </div>
+                    `;
+                    filtrosContainer.insertAdjacentHTML('afterbegin', searchHTML);
+                }
+            }
+            
+            // Event listener para búsqueda en tiempo real
+            document.getElementById('busqueda-salas-rapida').addEventListener('input', debounce(busquedaRapida, 300));
+        }
+
+        // Función debounce para optimizar búsquedas
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        async function busquedaRapida() {
+            const query = document.getElementById('busqueda-salas-rapida').value.toLowerCase();
+            const sugerenciasContainer = document.getElementById('sugerencias-busqueda');
+            
+            if (query.length < 2) {
+                sugerenciasContainer.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const response = await fetch(CONFIG.API_SALAS);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const salasFiltradas = data.data.filter(sala => 
+                        sala.nombre.toLowerCase().includes(query) ||
+                        sala.tipo.toLowerCase().includes(query) ||
+                        (sala.descripcion && sala.descripcion.toLowerCase().includes(query))
+                    ).slice(0, 5); // Limitar a 5 sugerencias
+                    
+                    if (salasFiltradas.length > 0) {
+                        const sugerenciasHTML = salasFiltradas.map(sala => `
+                            <button class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                                    onclick="seleccionarSalaSugerencia(${sala.id}, '${sala.nombre}')">
+                                <div>
+                                    <strong>${sala.nombre}</strong>
+                                    <small class="text-muted d-block">${sala.tipo} - Cap. ${sala.capacidad}</small>
+                                </div>
+                                <span class="badge bg-${sala.estado === 'disponible' ? 'success' : 'warning'}">
+                                    ${sala.estado}
+                                </span>
+                            </button>
+                        `).join('');
+                        
+                        sugerenciasContainer.innerHTML = sugerenciasHTML;
+                        sugerenciasContainer.style.display = 'block';
+                    } else {
+                        sugerenciasContainer.innerHTML = `
+                            <div class="list-group-item text-muted text-center">
+                                No se encontraron salas con "${query}"
+                            </div>
+                        `;
+                        sugerenciasContainer.style.display = 'block';
+                    }
+                }
+            } catch (error) {
+                console.error('Error en búsqueda rápida:', error);
+            }
+        }
+
+        function seleccionarSalaSugerencia(salaId, salaNombre) {
+            document.getElementById('busqueda-salas-rapida').value = salaNombre;
+            document.getElementById('sugerencias-busqueda').style.display = 'none';
+            
+            // Filtrar automáticamente por esa sala
+            buscarSalaEspecifica(salaId);
+        }
+
+        function limpiarBusqueda() {
+            document.getElementById('busqueda-salas-rapida').value = '';
+            document.getElementById('sugerencias-busqueda').style.display = 'none';
+            limpiarFiltros();
+        }
+
+        // ========== VISTA DE CALENDARIO DE DISPONIBILIDAD ==========
+        function mostrarCalendarioDisponibilidad(salaId, salaNombre) {
+            const fechaActual = new Date();
+            const fechasDisponibles = [];
+            
+            // Generar próximos 30 días
+            for (let i = 0; i < 30; i++) {
+                const fecha = new Date(fechaActual);
+                fecha.setDate(fechaActual.getDate() + i);
+                fechasDisponibles.push(fecha.toISOString().split('T')[0]);
+            }
+            
+            Swal.fire({
+                title: `Disponibilidad - ${salaNombre}`,
+                html: `
+                    <div id="calendario-disponibilidad" class="text-start">
+                        <div class="mb-3">
+                            <small class="text-muted">Selecciona una fecha para ver los horarios disponibles</small>
+                        </div>
+                        <div id="calendario-grid" class="d-grid gap-2" style="grid-template-columns: repeat(7, 1fr);">
+                            <!-- Se llenará dinámicamente -->
+                        </div>
+                        <div id="horarios-fecha" class="mt-3" style="display: none;">
+                            <h6>Horarios disponibles:</h6>
+                            <div id="lista-horarios"></div>
+                        </div>
+                    </div>
+                `,
+                width: '600px',
+                showConfirmButton: false,
+                showCloseButton: true,
+                willOpen: async () => {
+                    await cargarCalendarioDisponibilidad(salaId, fechasDisponibles);
+                }
+            });
+        }
+
+        async function cargarCalendarioDisponibilidad(salaId, fechas) {
+            const calendarioGrid = document.getElementById('calendario-grid');
+            const diasSemana = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            
+            // Agregar encabezados de días
+            diasSemana.forEach(dia => {
+                calendarioGrid.innerHTML += `<div class="text-center fw-bold text-muted small">${dia}</div>`;
+            });
+            
+            // Verificar disponibilidad para cada fecha
+            for (const fecha of fechas) {
+                try {
+                    const response = await fetch(`${CONFIG.API_RESERVAS}?sala_id=${salaId}&fecha=${fecha}&estado=confirmada`);
+                    const data = await response.json();
+                    
+                    const date = new Date(fecha + 'T00:00:00');
+                    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+                    const isPast = date < new Date().setHours(0, 0, 0, 0);
+                    
+                    let disponibilidad = 'disponible';
+                    let reservasCount = 0;
+                    
+                    if (data.success && data.data) {
+                        reservasCount = data.data.length;
+                        disponibilidad = reservasCount === 0 ? 'libre' : 
+                                        reservasCount >= 8 ? 'ocupado' : 'parcial';
+                    }
+                    
+                    const claseCSS = isPast ? 'btn-outline-secondary disabled' :
+                                   disponibilidad === 'libre' ? 'btn-outline-success' :
+                                   disponibilidad === 'parcial' ? 'btn-outline-warning' :
+                                   'btn-outline-danger';
+                    
+                    calendarioGrid.innerHTML += `
+                        <button class="btn ${claseCSS} btn-sm" 
+                                onclick="mostrarHorariosFecha('${fecha}', ${salaId})"
+                                ${isPast ? 'disabled' : ''}>
+                            <div class="fw-bold">${date.getDate()}</div>
+                            <small class="d-block">${reservasCount > 0 ? reservasCount + ' res.' : 'Libre'}</small>
+                        </button>
+                    `;
+                } catch (error) {
+                    console.error('Error al cargar fecha:', fecha, error);
+                }
+            }
+        }
+
+        async function mostrarHorariosFecha(fecha, salaId) {
+            const horariosContainer = document.getElementById('horarios-fecha');
+            const listaHorarios = document.getElementById('lista-horarios');
+            
+            try {
+                const response = await fetch(`${CONFIG.API_RESERVAS}?sala_id=${salaId}&fecha=${fecha}&estado=confirmada`);
+                const data = await response.json();
+                
+                const reservas = data.success ? data.data : [];
+                const horariosLaborales = generarHorariosLaborales();
+                
+                const horariosHTML = horariosLaborales.map(horario => {
+                    const estaOcupado = reservas.some(reserva => 
+                        horario >= reserva.hora_inicio && horario < reserva.hora_fin
+                    );
+                    
+                    const reservaEnEsteHorario = reservas.find(reserva => 
+                        horario >= reserva.hora_inicio && horario < reserva.hora_fin
+                    );
+                    
+                    return `
+                        <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                            <div>
+                                <span class="fw-semibold">${horario}</span>
+                                ${reservaEnEsteHorario ? 
+                                    `<small class="text-muted d-block">${reservaEnEsteHorario.proposito}</small>` : 
+                                    ''
+                                }
+                            </div>
+                            <span class="badge bg-${estaOcupado ? 'danger' : 'success'}">
+                                ${estaOcupado ? 'Ocupado' : 'Libre'}
+                            </span>
+                        </div>
+                    `;
+                }).join('');
+                
+                listaHorarios.innerHTML = horariosHTML;
+                horariosContainer.style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error al cargar horarios:', error);
+            }
+        }
+
+        function generarHorariosLaborales() {
+            const horarios = [];
+            for (let hora = 7; hora <= 20; hora++) {
+                horarios.push(`${hora.toString().padStart(2, '0')}:00`);
+                if (hora < 20) {
+                    horarios.push(`${hora.toString().padStart(2, '0')}:30`);
+                }
+            }
+            return horarios;
+        }
+
+        // ========== COMPARADOR DE SALAS ==========
+        let salasParaComparar = [];
+
+        function agregarAComparador(salaId, salaNombre) {
+            if (salasParaComparar.find(s => s.id === salaId)) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Sala ya agregada',
+                    text: 'Esta sala ya está en el comparador',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                return;
+            }
+            
+            if (salasParaComparar.length >= 3) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Límite alcanzado',
+                    text: 'Máximo 3 salas para comparar',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+                return;
+            }
+            
+            salasParaComparar.push({ id: salaId, nombre: salaNombre });
+            actualizarIndicadorComparador();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'Sala agregada',
+                text: `${salaNombre} agregada al comparador`,
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        function actualizarIndicadorComparador() {
+            let indicador = document.getElementById('indicador-comparador');
+            
+            if (!indicador && salasParaComparar.length > 0) {
+                // Crear indicador flotante
+                indicador = document.createElement('div');
+                indicador.id = 'indicador-comparador';
+                indicador.className = 'position-fixed bg-primary text-white rounded-pill px-3 py-2 shadow-lg';
+                indicador.style.cssText = 'bottom: 20px; right: 20px; z-index: 1050; cursor: pointer;';
+                indicador.onclick = mostrarComparador;
+                document.body.appendChild(indicador);
+            }
+            
+            if (indicador) {
+                if (salasParaComparar.length > 0) {
+                    indicador.innerHTML = `
+                        <i class="bi bi-bar-chart me-2"></i>
+                        Comparar (${salasParaComparar.length})
+                    `;
+                    indicador.style.display = 'block';
+                } else {
+                    indicador.style.display = 'none';
+                }
+            }
+        }
+
+        async function mostrarComparador() {
+            if (salasParaComparar.length === 0) return;
+            
+            try {
+                // Obtener detalles completos de las salas
+                const salasDetalladas = await Promise.all(
+                    salasParaComparar.map(async (sala) => {
+                        const response = await fetch(`${CONFIG.API_SALAS}?id=${sala.id}`);
+                        const data = await response.json();
+                        return data.success ? data.data : null;
+                    })
+                );
+                
+                const tablaComparacion = generarTablaComparacion(salasDetalladas.filter(s => s));
+                
+                Swal.fire({
+                    title: 'Comparador de Salas',
+                    html: tablaComparacion,
+                    width: '800px',
+                    showCancelButton: true,
+                    confirmButtonText: 'Cerrar',
+                    cancelButtonText: 'Limpiar Comparador',
+                    preConfirm: () => {
+                        return 'cerrar';
+                    }
+                }).then((result) => {
+                    if (result.dismiss === Swal.DismissReason.cancel) {
+                        limpiarComparador();
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Error al mostrar comparador:', error);
+            }
+        }
+
+        function generarTablaComparacion(salas) {
+            const caracteristicas = [
+                { key: 'nombre', label: 'Nombre' },
+                { key: 'tipo', label: 'Tipo' },
+                { key: 'capacidad', label: 'Capacidad' },
+                { key: 'tiene_proyector', label: 'Proyector', type: 'boolean' },
+                { key: 'tiene_pizarra_digital', label: 'Pizarra Digital', type: 'boolean' },
+                { key: 'es_accesible', label: 'Accesible', type: 'boolean' },
+                { key: 'estado', label: 'Estado' },
+                { key: 'descripcion', label: 'Descripción' }
+            ];
+            
+            let tabla = `
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="200px">Característica</th>
+                                ${salas.map(sala => `<th class="text-center">${sala.nombre}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            caracteristicas.forEach(caracteristica => {
+                tabla += `<tr>
+                    <td class="fw-semibold">${caracteristica.label}</td>
+                    ${salas.map(sala => {
+                        let valor = sala[caracteristica.key];
+                        if (caracteristica.type === 'boolean') {
+                            valor = valor ? 
+                                '<i class="bi bi-check-circle text-success"></i> Sí' : 
+                                '<i class="bi bi-x-circle text-danger"></i> No';
+                        }
+                        return `<td class="text-center">${valor || 'N/A'}</td>`;
+                    }).join('')}
+                </tr>`;
+            });
+            
+            tabla += `
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex gap-2 justify-content-center mt-3">
+                    ${salas.map(sala => `
+                        <button class="btn btn-primary btn-sm" onclick="reservarSalaDesdeComparador(${sala.id})">
+                            Reservar ${sala.nombre}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            return tabla;
+        }
+
+        function limpiarComparador() {
+            salasParaComparar = [];
+            actualizarIndicadorComparador();
+        }
+
+        function reservarSalaDesdeComparador(salaId) {
+            Swal.close();
+            reservarSala(salaId);
+        }
+
+        // ========== SISTEMA DE FAVORITOS ==========
+        function toggleFavorito(salaId, salaNombre) {
+            let favoritos = JSON.parse(localStorage.getItem('salasFavoritas') || '[]');
+            const existe = favoritos.find(f => f.id === salaId);
+            
+            if (existe) {
+                favoritos = favoritos.filter(f => f.id !== salaId);
+                mostrarMensaje('Sala eliminada de favoritos', 'info');
+            } else {
+                favoritos.push({ id: salaId, nombre: salaNombre, fecha: new Date().toISOString() });
+                mostrarMensaje('Sala agregada a favoritos', 'success');
+            }
+            
+            localStorage.setItem('salasFavoritas', JSON.stringify(favoritos));
+            actualizarIconosFavoritos();
+        }
+
+        function esFavorito(salaId) {
+            const favoritos = JSON.parse(localStorage.getItem('salasFavoritas') || '[]');
+            return favoritos.some(f => f.id === salaId);
+        }
+
+        function mostrarSalasFavoritas() {
+            const favoritos = JSON.parse(localStorage.getItem('salasFavoritas') || '[]');
+            
+            if (favoritos.length === 0) {
+                Swal.fire({
+                    icon: 'info',
+                    title: 'Sin favoritos',
+                    text: 'No tienes salas favoritas guardadas'
+                });
+                return;
+            }
+            
+            const favoritosHTML = favoritos.map(fav => `
+                <div class="d-flex justify-content-between align-items-center p-2 border-bottom">
+                    <div>
+                        <strong>${fav.nombre}</strong>
+                        <small class="text-muted d-block">Agregado: ${new Date(fav.fecha).toLocaleDateString()}</small>
+                    </div>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-primary" onclick="reservarSala(${fav.id}, '${fav.nombre}')">
+                            Reservar
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="toggleFavorito(${fav.id}, '${fav.nombre}')">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            Swal.fire({
+                title: 'Mis Salas Favoritas',
+                html: favoritosHTML,
+                width: '500px',
+                showConfirmButton: false,
+                showCloseButton: true
+            });
+        }
+
+        function actualizarIconosFavoritos() {
+            document.querySelectorAll('[data-sala-id]').forEach(elemento => {
+                const salaId = parseInt(elemento.dataset.salaId);
+                const iconoFavorito = elemento.querySelector('.icono-favorito');
+                if (iconoFavorito) {
+                    iconoFavorito.className = `icono-favorito bi ${esFavorito(salaId) ? 'bi-heart-fill text-danger' : 'bi-heart text-muted'}`;
+                }
+            });
+        }
+
+        function mostrarMensaje(texto, tipo) {
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+            
+            Toast.fire({
+                icon: tipo,
+                title: texto
+            });
+        }
+
+        // ========== COMPARADOR EN MODO DESARROLLO ==========
+        function agregarAComparador(salaId, salaNombre) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Función en Desarrollo',
+                html: `
+                    <div class="text-center">
+                        <i class="bi bi-tools text-warning fs-1 mb-3"></i>
+                        <h5 class="text-primary mb-3">Comparador de Salas</h5>
+                        <p class="text-muted mb-3">
+                            La funcionalidad de <strong>comparar salas</strong> estará disponible próximamente.
+                        </p>
+                        <div class="alert alert-light border">
+                            <small class="text-muted">
+                                <i class="bi bi-lightbulb me-1"></i>
+                                Esta función te permitirá comparar características de hasta 3 salas simultáneamente
+                            </small>
+                        </div>
+                        <p class="small text-muted">
+                            Por ahora puedes revisar cada sala individualmente y usar el botón 
+                            <span class="badge bg-primary">"Ver Detalles"</span> para obtener más información.
+                        </p>
+                    </div>
+                `,
+                confirmButtonText: 'Entendido',
+                confirmButtonColor: '#0d6efd',
+                width: '500px'
+            });
+        }
+
+        // Función para mostrar el indicador visual de desarrollo
+        function mostrarBadgeDesarrollo() {
+            return `
+                <span class="badge bg-warning bg-opacity-10 text-warning ms-1" title="En desarrollo">
+                    <i class="bi bi-wrench-adjustable"></i>
+                </span>
+            `;
         }
     </script>
 </body>
