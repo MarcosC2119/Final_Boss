@@ -1,10 +1,9 @@
 <?php
-// Agregar al inicio del archivo para obtener el email real del usuario
+// Optimización: Simplificar obtención de datos de sesión
 session_start();
-// Asumir que el email está en la sesión (ajustar según tu sistema de auth)
-$email_usuario = isset($_SESSION['email']) ? $_SESSION['email'] : 'usuario@ejemplo.com';
-$usuario_nombre = isset($_SESSION['nombre']) ? $_SESSION['nombre'] : 'Docente';
-$usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
+$email_usuario = $_SESSION['email'] ?? 'usuario@ejemplo.com';
+$usuario_nombre = $_SESSION['nombre'] ?? 'Docente';
+$usuario_rol = $_SESSION['rol'] ?? 'docente';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -23,7 +22,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     
     <style>
-        /* Estilos profesionales similares al dashboard admin */
+        /* CSS Optimizado - Eliminando redundancias */
         body {
             background: linear-gradient(135deg, #f8fafc 0%, #e3f2fd 100%);
             font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
@@ -40,41 +39,34 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
             border-left: 3px solid transparent;
         }
         
-        .nav-link-custom:hover {
+        .nav-link-custom:hover, .nav-link-custom.active {
             background: rgba(13, 110, 253, 0.1);
             border-left-color: #0d6efd;
-            transform: translateX(5px);
         }
         
-        .nav-link-custom.active {
-            background: linear-gradient(135deg, rgba(13, 110, 253, 0.1), rgba(13, 110, 253, 0.05));
-            border-left-color: #0d6efd;
-            color: #0d6efd !important;
+        .nav-link-custom:hover { transform: translateX(5px); }
+        .nav-link-custom.active { color: #0d6efd !important; }
+        
+        .user-avatar, .brand-logo {
+            background: linear-gradient(135deg, #0d6efd, #6610f2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
         }
         
         .user-avatar {
             width: 40px;
             height: 40px;
-            background: linear-gradient(135deg, #0d6efd, #6610f2);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             border-radius: 50%;
-            color: white;
-            font-weight: bold;
         }
         
         .brand-logo {
-            background: linear-gradient(135deg, #0d6efd, #6610f2);
             width: 50px;
             height: 50px;
             border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
             font-size: 1.5rem;
-            font-weight: bold;
         }
         
         .notification-badge {
@@ -92,15 +84,15 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
             justify-content: center;
         }
         
-        .stats-card {
+        .card-hover {
             transition: all 0.3s ease;
             border: none;
             border-radius: 15px;
         }
         
-        .stats-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
         }
         
         .main-content {
@@ -109,19 +101,6 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
             border-radius: 20px;
             min-height: 85vh;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-        }
-        
-        .section-card {
-            background: white;
-            border-radius: 15px;
-            border: none;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            transition: all 0.3s ease;
-        }
-        
-        .section-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
         }
         
         .btn-custom-primary {
@@ -142,11 +121,9 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
             border-left: 4px solid transparent;
         }
         
-        .ticket-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
+        .ticket-card:hover { transform: translateY(-2px); }
         
+        /* Estados de tickets optimizados */
         .ticket-pendiente { border-left-color: #ffc107; }
         .ticket-en-proceso { border-left-color: #0d6efd; }
         .ticket-resuelto { border-left-color: #198754; }
@@ -208,7 +185,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
 
     <div class="container-fluid">
         <div class="row">
-            <!-- ========== SIDEBAR ========== -->
+            <!-- ========== SIDEBAR OPTIMIZADO ========== -->
             <nav class="col-lg-2 col-md-3 d-md-block sidebar-glass position-sticky" style="top: 0; height: 100vh; overflow-y: auto;">
                 <div class="position-sticky pt-4">
                     
@@ -216,7 +193,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                     <div class="px-3 mb-4">
                         <div class="row g-2">
                             <div class="col-6">
-                                <div class="card border-0 bg-primary bg-gradient text-white stats-card">
+                                <div class="card border-0 bg-primary bg-gradient text-white card-hover">
                                     <div class="card-body p-2 text-center">
                                         <i class="bi bi-calendar-check fs-4"></i>
                                         <div class="fw-bold" id="stat-reservas">0</div>
@@ -225,7 +202,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="card border-0 bg-warning bg-gradient text-white stats-card">
+                                <div class="card border-0 bg-warning bg-gradient text-white card-hover">
                                     <div class="card-body p-2 text-center">
                                         <i class="bi bi-headset fs-4"></i>
                                         <div class="fw-bold" id="stat-tickets">0</div>
@@ -236,7 +213,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                         </div>
                     </div>
 
-                    <!-- Navigation Menu -->
+                    <!-- Navigation Menu Optimizado -->
                     <div class="px-3">
                         <!-- Acciones Principales -->
                         <div class="mb-4">
@@ -767,23 +744,226 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                     </div>
 
                     <div id="seccion-capacitaciones" class="content-section" style="display: none;">
-                        <div class="section-card">
-                            <div class="card-body p-5 text-center">
-                                <i class="bi bi-mortarboard text-muted fs-1 mb-3"></i>
-                                <h5 class="text-muted">Capacitaciones</h5>
-                                <p class="text-muted">Materiales de capacitación y documentos de entrenamiento.</p>
-                                <button class="btn btn-custom-primary">Ver Capacitaciones</button>
+                        <!-- Estadísticas de Capacitaciones -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-4">
+                                <div class="card border-0 h-100" style="background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);">
+                                    <div class="card-body text-center p-3">
+                                        <i class="bi bi-mortarboard text-success fs-3 mb-2"></i>
+                                        <h5 class="fw-bold mb-1" id="total-capacitaciones">0</h5>
+                                        <small class="text-success">Total Disponibles</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-0 h-100" style="background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);">
+                                    <div class="card-body text-center p-3">
+                                        <i class="bi bi-file-earmark-pdf text-warning fs-3 mb-2"></i>
+                                        <h5 class="fw-bold mb-1" id="total-pdfs">0</h5>
+                                        <small class="text-warning">Documentos PDF</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-0 h-100" style="background: linear-gradient(135deg, #cce5ff 0%, #74b9ff 100%);">
+                                    <div class="card-body text-center p-3">
+                                        <i class="bi bi-file-earmark-word text-primary fs-3 mb-2"></i>
+                                        <h5 class="fw-bold mb-1" id="total-words">0</h5>
+                                        <small class="text-primary">Documentos Word</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Buscador -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-body">
+                                        <div class="row align-items-center">
+                                            <div class="col-md-8">
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light border-end-0">
+                                                        <i class="bi bi-search text-muted"></i>
+                                                    </span>
+                                                    <input type="text" class="form-control border-start-0" 
+                                                           id="buscar-capacitaciones" 
+                                                           placeholder="Buscar por título o descripción...">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <select class="form-select" id="filtro-tipo-capacitaciones">
+                                                    <option value="">Todos los tipos</option>
+                                                    <option value="PDF">Solo PDF</option>
+                                                    <option value="WORD">Solo Word</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lista de Capacitaciones -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                        <h6 class="fw-bold text-primary mb-0">
+                                            <i class="bi bi-collection me-2"></i>Material de Capacitación Disponible
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Loading -->
+                                        <div id="loading-capacitaciones" class="text-center py-4" style="display: none;">
+                                            <div class="spinner-border text-primary" role="status">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                            <p class="text-muted mt-2 mb-0">Cargando capacitaciones...</p>
+                                        </div>
+
+                                        <!-- Sin capacitaciones -->
+                                        <div id="sin-capacitaciones" class="text-center py-5" style="display: none;">
+                                            <i class="bi bi-inbox text-muted fs-1 mb-3"></i>
+                                            <h6 class="text-muted mb-2">No hay capacitaciones disponibles</h6>
+                                            <p class="text-muted small mb-0">Los materiales de capacitación aparecerán aquí cuando estén disponibles</p>
+                                        </div>
+
+                                        <!-- Lista de capacitaciones -->
+                                        <div id="lista-capacitaciones">
+                                            <!-- Las capacitaciones se cargarán aquí dinámicamente -->
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- ========== SECCIÓN: MANUAL DE USUARIO ========== -->
                     <div id="seccion-manual" class="content-section" style="display: none;">
-                        <div class="section-card">
-                            <div class="card-body p-5 text-center">
-                                <i class="bi bi-book text-muted fs-1 mb-3"></i>
-                                <h5 class="text-muted">Manual de Usuario</h5>
-                                <p class="text-muted">Guía completa de uso del sistema ROOMIT.</p>
-                                <button class="btn btn-custom-primary">Abrir Manual</button>
+                        <div class="container-fluid p-4">
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h2 class="text-dark mb-4">
+                                        <i class="bi bi-book me-2"></i>Manuales de Usuario
+                                    </h2>
+                                </div>
+                            </div>
+
+                            <!-- Estadísticas -->
+                            <div class="row mb-4">
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card bg-primary text-white h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <h4 class="mb-0" id="totalManualesUser">0</h4>
+                                                    <small>Total Manuales</small>
+                                                </div>
+                                                <div class="align-self-center">
+                                                    <i class="bi bi-book fa-2x"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card bg-success text-white h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <h4 class="mb-0" id="manualesPDFUser">0</h4>
+                                                    <small>Archivos PDF</small>
+                                                </div>
+                                                <div class="align-self-center">
+                                                    <i class="bi bi-file-pdf fa-2x"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card bg-info text-white h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <h4 class="mb-0" id="manualesWordUser">0</h4>
+                                                    <small>Documentos Word</small>
+                                                </div>
+                                                <div class="align-self-center">
+                                                    <i class="bi bi-file-word fa-2x"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-3 col-md-6 mb-3">
+                                    <div class="card bg-warning text-white h-100">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <div>
+                                                    <h4 class="mb-0" id="manualesGeneralUser">0</h4>
+                                                    <small>Categoría General</small>
+                                                </div>
+                                                <div class="align-self-center">
+                                                    <i class="bi bi-globe fa-2x"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Filtros de búsqueda -->
+                            <div class="card mb-4">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="bi bi-filter me-2"></i>Búsqueda y Filtros</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            <label for="searchManuales" class="form-label">Buscar manuales:</label>
+                                            <input type="text" class="form-control" id="searchManuales" placeholder="Buscar por título o descripción...">
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label for="filterCategoria" class="form-label">Categoría:</label>
+                                            <select class="form-select" id="filterCategoria">
+                                                <option value="">Todas las categorías</option>
+                                                <option value="usuario">Usuario</option>
+                                                <option value="general">General</option>
+                                                <option value="tecnico">Técnico</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-3 mb-3">
+                                            <label for="filterTipo" class="form-label">Tipo de archivo:</label>
+                                            <select class="form-select" id="filterTipo">
+                                                <option value="">Todos los tipos</option>
+                                                <option value="PDF">PDF</option>
+                                                <option value="WORD">Word</option>
+                                                <option value="HTML">HTML</option>
+                                                <option value="TEXTO">Texto</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Lista de manuales -->
+                            <div class="card">
+                                <div class="card-header bg-primary text-white">
+                                    <h5 class="mb-0"><i class="bi bi-list me-2"></i>Manuales Disponibles</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="loadingManuales" class="text-center p-4 d-none">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Cargando...</span>
+                                        </div>
+                                        <p class="mt-2">Cargando manuales...</p>
+                                    </div>
+                                    <div id="manualesContainer" class="row">
+                                        <!-- Los manuales se cargarán aquí dinámicamente -->
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -890,40 +1070,74 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 
     <script>
-        // ========== VARIABLES GLOBALES ==========
-        const emailUsuario = '<?= $email_usuario ?>';
-        const API_SOPORTE = '../../Backend/api/SoporteTecnico/Metodos-soporte.php';
+        // ========== VARIABLES GLOBALES OPTIMIZADAS ==========
+        const CONFIG = {
+            emailUsuario: '<?= $email_usuario ?>',
+            API_SOPORTE: '../../Backend/api/SoporteTecnico/Metodos-soporte.php',
+            API_CAPACITACIONES: '../../Backend/CRUD-admin/crud-capacitaciones.php',
+            API_BASE: '../../Backend',  // ← AGREGAR ESTA LÍNEA
+            INACTIVIDAD_TIMEOUT: 30 * 60 * 1000,
+            ACTUALIZACION_INTERVAL: 30000
+        };
+        
         let misTickets = [];
         let mostrandoTodos = false;
         let inactivityTimer;
+        let updateInterval;
 
-        // ========== INICIALIZACIÓN ==========
+        // ========== INICIALIZACIÓN OPTIMIZADA ==========
         document.addEventListener('DOMContentLoaded', function() {
             cargarDashboard();
             mostrarSeccion('resumen');
             cargarMisTickets();
+            initEventListeners();
         });
 
-        // ========== NAVEGACIÓN ENTRE SECCIONES MEJORADA ==========
+        // ========== GESTIÓN DE EVENT LISTENERS ==========
+        function initEventListeners() {
+            // Notificaciones
+            document.getElementById('btn-notificaciones').addEventListener('click', function() {
+                if (misTickets.some(t => t.respuesta_admin)) {
+                    mostrarSeccion('soporte');
+                }
+            });
+
+            // Actualización automática optimizada
+            updateInterval = setInterval(() => {
+                if (document.getElementById('seccion-soporte').style.display !== 'none') {
+                    cargarMisTickets();
+                }
+            }, CONFIG.ACTUALIZACION_INTERVAL);
+        }
+
+        // ========== NAVEGACIÓN OPTIMIZADA ==========
         function mostrarSeccion(seccion) {
-            // Ocultar todas las secciones
+            // Ocultar todas las secciones de una vez
             document.querySelectorAll('.content-section').forEach(s => s.style.display = 'none');
             
             // Mostrar la sección seleccionada
-            document.getElementById(`seccion-${seccion}`).style.display = 'block';
+            const seccionElement = document.getElementById(`seccion-${seccion}`);
+            if (seccionElement) {
+                seccionElement.style.display = 'block';
+            }
             
-            // Actualizar navegación activa
+            // Actualizar navegación activa con delegación de eventos optimizada
             document.querySelectorAll('.nav-link-custom').forEach(link => {
                 link.classList.remove('active');
             });
             
-            // Activar el enlace correspondiente
             const activeLink = document.querySelector(`[href="#${seccion}"]`);
             if (activeLink) {
                 activeLink.classList.add('active');
             }
             
-            // Actualizar breadcrumb
+            // Actualizar breadcrumb y acciones del header
+            updatePageInfo(seccion);
+            loadSectionData(seccion);
+        }
+
+        // ========== FUNCIÓN AUXILIAR PARA ACTUALIZAR INFO DE PÁGINA ==========
+        function updatePageInfo(seccion) {
             const breadcrumbTextos = {
                 'resumen': 'Resumen',
                 'reservas': 'Revisar Salas',
@@ -935,99 +1149,72 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
             };
             
             document.getElementById('breadcrumb-actual').textContent = breadcrumbTextos[seccion] || 'Sección';
-            
-            // Actualizar botones del header según la sección
             actualizarHeaderActions(seccion);
-            
-            // Cargar datos específicos según la sección
-            switch(seccion) {
-                case 'soporte':
-                    cargarMisTickets();
-                    break;
-                case 'reservas':
-                    cargarSalasDisponibles();
-                    break;
-                case 'mis-qr':
-                    cargarCodigosQR();
-                    break;
-                case 'nueva-reserva':
-                    configurarFormularioReserva();
-                    break;
-                case 'capacitaciones':
-                    cargarCapacitaciones();
-                    break;
-                case 'manual':
-                    cargarManualUsuario();
-                    break;
-            }
         }
 
-        // ========== ACTUALIZAR BOTONES DEL HEADER ==========
+        // ========== CARGA DE DATOS ESPECÍFICOS POR SECCIÓN ==========
+        function loadSectionData(seccion) {
+            const loadHandlers = {
+                'soporte': cargarMisTickets,
+                'reservas': () => console.log('Cargar salas disponibles'),
+                'mis-qr': () => console.log('Cargar códigos QR'),
+                'nueva-reserva': () => console.log('Configurar formulario'),
+                'capacitaciones': cargarCapacitaciones, // ← CAMBIAR ESTA LÍNEA
+                'manual': loadManualesUsuario  // ← AGREGAR ESTA LÍNEA
+            };
+            
+            const handler = loadHandlers[seccion];
+            if (handler) handler();
+        }
+
+        // ========== HEADER ACTIONS OPTIMIZADO ==========
         function actualizarHeaderActions(seccion) {
             const headerActions = document.getElementById('header-actions');
             
-            const acciones = {
-                'resumen': `
-                    <button class="btn btn-outline-primary" onclick="cargarDashboard()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
-                    </button>
-                `,
-                'reservas': `
-                    <button class="btn btn-outline-primary" onclick="cargarSalasDisponibles()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
-                    </button>
+            const actionTemplates = {
+                'resumen': `<button class="btn btn-outline-primary" onclick="cargarDashboard()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Actualizar</button>`,
+                'reservas': `<button class="btn btn-outline-primary" onclick="loadSectionData('reservas')">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Actualizar</button>
                     <button class="btn btn-primary" onclick="mostrarSeccion('nueva-reserva')">
-                        <i class="bi bi-plus-circle me-2"></i>Nueva Reserva
-                    </button>
-                `,
-                'nueva-reserva': `
-                    <button class="btn btn-outline-secondary" onclick="limpiarFormularioReserva()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Limpiar
-                    </button>
-                `,
-                'mis-qr': `
-                    <button class="btn btn-outline-primary" onclick="cargarCodigosQR()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
-                    </button>
+                    <i class="bi bi-plus-circle me-2"></i>Nueva Reserva</button>`,
+                'nueva-reserva': `<button class="btn btn-outline-secondary" onclick="limpiarFormulario()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Limpiar</button>`,
+                'mis-qr': `<button class="btn btn-outline-primary" onclick="loadSectionData('mis-qr')">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Actualizar</button>
                     <button class="btn btn-primary" onclick="descargarTodosQR()">
-                        <i class="bi bi-download me-2"></i>Descargar Todos
-                    </button>
-                `,
-                'soporte': `
-                    <button class="btn btn-outline-primary" onclick="cargarMisTickets()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
-                    </button>
+                    <i class="bi bi-download me-2"></i>Descargar Todos</button>`,
+                'soporte': `<button class="btn btn-outline-primary" onclick="cargarMisTickets()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Actualizar</button>
                     <button class="btn btn-primary" onclick="nuevaSolicitudSoporte()">
-                        <i class="bi bi-plus-circle me-2"></i>Nueva Solicitud
-                    </button>
-                `,
-                'capacitaciones': `
-                    <button class="btn btn-outline-primary" onclick="cargarCapacitaciones()">
-                        <i class="bi bi-arrow-clockwise me-2"></i>Actualizar
-                    </button>
-                `,
-                'manual': `
-                    <button class="btn btn-outline-primary" onclick="descargarManual()">
-                        <i class="bi bi-download me-2"></i>Descargar PDF
-                    </button>
-                `
+                    <i class="bi bi-plus-circle me-2"></i>Nueva Solicitud</button>`,
+                'capacitaciones': `<button class="btn btn-outline-primary" onclick="cargarCapacitaciones()">
+                    <i class="bi bi-arrow-clockwise me-2"></i>Actualizar</button>`,
+                'manual': `<button class="btn btn-outline-primary" onclick="descargarManual()">
+                    <i class="bi bi-download me-2"></i>Descargar PDF</button>`
             };
             
-            headerActions.innerHTML = acciones[seccion] || acciones['resumen'];
+            headerActions.innerHTML = actionTemplates[seccion] || actionTemplates['resumen'];
         }
 
-        // ========== CARGAR DASHBOARD ==========
+        // ========== CARGAR DASHBOARD OPTIMIZADO ==========
         async function cargarDashboard() {
             try {
-                // Simular carga de estadísticas (aquí conectarías con tus APIs reales)
-                document.getElementById('total-reservas-activas').textContent = '3';
-                document.getElementById('salas-disponibles').textContent = '12';
-                document.getElementById('tickets-pendientes').textContent = '1';
-                document.getElementById('qr-generados').textContent = '3';
+                // Simulación optimizada de estadísticas
+                const stats = {
+                    'total-reservas-activas': '3',
+                    'salas-disponibles': '12',
+                    'tickets-pendientes': '1',
+                    'qr-generados': '3',
+                    'stat-reservas': '3',
+                    'stat-tickets': '1'
+                };
                 
-                // Actualizar stats del sidebar
-                document.getElementById('stat-reservas').textContent = '3';
-                document.getElementById('stat-tickets').textContent = '1';
+                // Actualización batch de elementos
+                Object.entries(stats).forEach(([id, value]) => {
+                    const element = document.getElementById(id);
+                    if (element) element.textContent = value;
+                });
                 
                 cargarMisReservas();
                 cargarNotificaciones();
@@ -1037,23 +1224,23 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
             }
         }
 
-        // ========== CARGAR MIS RESERVAS ==========
+        // ========== FUNCIONES DE CARGA OPTIMIZADAS ==========
         function cargarMisReservas() {
             const container = document.getElementById('mis-reservas-container');
+            if (!container) return;
             
-            // Datos de ejemplo (reemplazar con llamada a API real)
-            const reservasEjemplo = `
-                <div class="card border-0 mb-3 shadow-sm rounded-3" style="border-left: 4px solid #198754 !important;">
+            // Template optimizado con menos HTML
+            container.innerHTML = `
+                <div class="card border-0 mb-3 shadow-sm rounded-3 card-hover" style="border-left: 4px solid #198754 !important;">
                     <div class="card-body p-3">
                         <div class="row align-items-center">
                             <div class="col-md-8">
-                                <h6 class="card-title fw-bold text-primary mb-2">
+                                <h6 class="fw-bold text-primary mb-2">
                                     <i class="bi bi-door-closed me-2"></i>Sala 101 - Matemáticas
                                 </h6>
                                 <div class="d-flex flex-wrap gap-3">
                                     <small class="text-muted">
-                                        <i class="bi bi-calendar-event text-primary me-1"></i>
-                                        Hoy, 2024-03-20
+                                        <i class="bi bi-calendar-event text-primary me-1"></i>Hoy, 2024-03-20
                                     </small>
                                     <small class="text-muted">
                                         <i class="bi bi-clock text-primary me-1"></i>
@@ -1116,11 +1303,17 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                 sinTicketsElement.style.display = 'none';
                 listaElement.style.display = 'none';
 
-                const response = await fetch(`${API_SOPORTE}?email_solicitante=${encodeURIComponent(emailUsuario)}`);
+                const response = await fetch(CONFIG.API_SOPORTE, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
+                    }
+                });
                 const data = await response.json();
 
                 if (data.success && data.data) {
-                    misTickets = data.data.filter(ticket => ticket.email_solicitante === emailUsuario);
+                    misTickets = data.data.filter(ticket => ticket.email_solicitante === CONFIG.emailUsuario);
                     
                     if (misTickets.length === 0) {
                         sinTicketsElement.style.display = 'block';
@@ -1310,7 +1503,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
         // ========== NUEVA SOLICITUD ==========
         function nuevaSolicitudSoporte() {
             // Establecer email del usuario al abrir el modal
-            const emailUsuarioActual = JSON.parse(localStorage.getItem('userData') || '{}').email || emailUsuario;
+            const emailUsuarioActual = JSON.parse(localStorage.getItem('userData') || '{}').email || CONFIG.emailUsuario;
             document.getElementById('emailSolicitud').value = emailUsuarioActual;
             
             // Resetear el estado del campo email
@@ -1337,7 +1530,7 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
         async function enviarSolicitudSoporte() {
             try {
                 const solicitud = {
-                    email: emailUsuario,
+                    email: CONFIG.emailUsuario,
                     tipo: document.getElementById('tipoSolicitud').value,
                     motivo: document.getElementById('motivoSolicitud').value,
                     prioridad: document.getElementById('prioridadSolicitud').value
@@ -1345,10 +1538,11 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
 
                 console.log('📤 Enviando solicitud:', solicitud);
 
-                const response = await fetch(API_SOPORTE, {
+                const response = await fetch(CONFIG.API_SOPORTE, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('token')}`
                     },
                     body: JSON.stringify(solicitud)
                 });
@@ -1712,6 +1906,437 @@ $usuario_rol = isset($_SESSION['rol']) ? $_SESSION['rol'] : 'docente';
                 btnEditar.innerHTML = '<i class="bi bi-pencil me-1"></i>Cambiar';
                 btnEditar.className = 'btn btn-outline-secondary';
                 helpText.innerHTML = '<i class="bi bi-check-circle me-1"></i>Email confirmado. Haz clic en "Cambiar" si necesitas modificarlo.';
+            }
+        }
+
+        // ========== FUNCIONES DE CAPACITACIONES ==========
+        let capacitacionesData = [];
+        let capacitacionesFiltradas = [];
+
+        async function cargarCapacitaciones() {
+            const elements = {
+                loading: document.getElementById('loading-capacitaciones'),
+                sinCapacitaciones: document.getElementById('sin-capacitaciones'),
+                lista: document.getElementById('lista-capacitaciones')
+            };
+            
+            try {
+                if (elements.loading) elements.loading.style.display = 'block';
+                if (elements.sinCapacitaciones) elements.sinCapacitaciones.style.display = 'none';
+                if (elements.lista) elements.lista.style.display = 'none';
+
+                const response = await fetch(CONFIG.API_CAPACITACIONES);
+                const data = await response.json();
+
+                if (Array.isArray(data)) {
+                    // Filtrar solo capacitaciones activas
+                    capacitacionesData = data.filter(cap => cap.estado == 1);
+                    capacitacionesFiltradas = [...capacitacionesData];
+                    
+                    if (capacitacionesData.length === 0) {
+                        if (elements.sinCapacitaciones) elements.sinCapacitaciones.style.display = 'block';
+                    } else {
+                        renderizarCapacitaciones(capacitacionesFiltradas);
+                        actualizarEstadisticasCapacitaciones(capacitacionesData);
+                        initBuscadorCapacitaciones();
+                    }
+                } else {
+                    console.error('Error en la respuesta:', data);
+                    if (elements.sinCapacitaciones) elements.sinCapacitaciones.style.display = 'block';
+                }
+
+            } catch (error) {
+                console.error('Error al cargar capacitaciones:', error);
+                if (elements.sinCapacitaciones) elements.sinCapacitaciones.style.display = 'block';
+            } finally {
+                if (elements.loading) elements.loading.style.display = 'none';
+            }
+        }
+
+        function renderizarCapacitaciones(capacitaciones) {
+            const container = document.getElementById('lista-capacitaciones');
+            if (!container) return;
+
+            if (capacitaciones.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="bi bi-search text-muted fs-3 mb-2"></i>
+                        <p class="text-muted mb-0">No se encontraron capacitaciones con los filtros aplicados</p>
+                    </div>
+                `;
+                container.style.display = 'block';
+                return;
+            }
+
+            const capacitacionesHTML = capacitaciones.map(cap => createCapacitacionHTML(cap)).join('');
+            container.innerHTML = capacitacionesHTML;
+            container.style.display = 'block';
+        }
+
+        function createCapacitacionHTML(capacitacion) {
+            const tipoIcon = capacitacion.archivo_tipo === 'PDF' ? 
+                '<i class="bi bi-file-earmark-pdf text-danger fs-4"></i>' : 
+                '<i class="bi bi-file-earmark-word text-primary fs-4"></i>';
+            
+            const tipoClass = capacitacion.archivo_tipo === 'PDF' ? 'border-danger' : 'border-primary';
+            
+            return `
+                <div class="card border-0 mb-3 shadow-sm rounded-3 card-hover ${tipoClass}" 
+                     style="border-left: 4px solid ${capacitacion.archivo_tipo === 'PDF' ? '#dc3545' : '#0d6efd'} !important;">
+                    <div class="card-body p-3">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-start mb-2">
+                                    <div class="me-3">
+                                        ${tipoIcon}
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-1 fw-bold text-dark">
+                                            ${capacitacion.titulo}
+                                        </h6>
+                                        <p class="text-muted small mb-2">
+                                            ${capacitacion.descripcion || 'Sin descripción disponible'}
+                                        </p>
+                                        <div class="d-flex gap-3 flex-wrap">
+                                            <small class="text-muted">
+                                                <i class="bi bi-file-earmark me-1"></i>
+                                                ${capacitacion.archivo_nombre}
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar-event me-1"></i>
+                                                ${formatearFecha(capacitacion.fecha_creacion)}
+                                            </small>
+                                            <span class="badge ${capacitacion.archivo_tipo === 'PDF' ? 'bg-danger' : 'bg-primary'} bg-opacity-10 ${capacitacion.archivo_tipo === 'PDF' ? 'text-danger' : 'text-primary'}">
+                                                ${capacitacion.archivo_tipo}
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="d-flex flex-column gap-2">
+                                    <button class="btn btn-${capacitacion.archivo_tipo === 'PDF' ? 'danger' : 'primary'} btn-sm rounded-pill" 
+                                            onclick="descargarCapacitacion(${capacitacion.id}, '${capacitacion.archivo_nombre}')">
+                                        <i class="bi bi-download me-1"></i>Descargar
+                                    </button>
+                                    <button class="btn btn-outline-secondary btn-sm rounded-pill" 
+                                            onclick="verDetallesCapacitacion(${capacitacion.id})">
+                                        <i class="bi bi-eye me-1"></i>Ver Detalles
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function actualizarEstadisticasCapacitaciones(capacitaciones) {
+            const stats = {
+                total: capacitaciones.length,
+                pdfs: capacitaciones.filter(cap => cap.archivo_tipo === 'PDF').length,
+                words: capacitaciones.filter(cap => cap.archivo_tipo === 'WORD').length
+            };
+
+            const elements = {
+                'total-capacitaciones': stats.total,
+                'total-pdfs': stats.pdfs,
+                'total-words': stats.words
+            };
+
+            Object.entries(elements).forEach(([id, value]) => {
+                const element = document.getElementById(id);
+                if (element) element.textContent = value;
+            });
+        }
+
+        function initBuscadorCapacitaciones() {
+            const buscador = document.getElementById('buscar-capacitaciones');
+            const filtroTipo = document.getElementById('filtro-tipo-capacitaciones');
+            
+            if (buscador) {
+                buscador.addEventListener('input', filtrarCapacitaciones);
+            }
+            
+            if (filtroTipo) {
+                filtroTipo.addEventListener('change', filtrarCapacitaciones);
+            }
+        }
+
+        function filtrarCapacitaciones() {
+            const busqueda = document.getElementById('buscar-capacitaciones')?.value.toLowerCase() || '';
+            const tipoFiltro = document.getElementById('filtro-tipo-capacitaciones')?.value || '';
+            
+            capacitacionesFiltradas = capacitacionesData.filter(cap => {
+                const matchBusqueda = !busqueda || 
+                    cap.titulo.toLowerCase().includes(busqueda) ||
+                    (cap.descripcion && cap.descripcion.toLowerCase().includes(busqueda)) ||
+                    cap.archivo_nombre.toLowerCase().includes(busqueda);
+                    
+                const matchTipo = !tipoFiltro || cap.archivo_tipo === tipoFiltro;
+                
+                return matchBusqueda && matchTipo;
+            });
+            
+            renderizarCapacitaciones(capacitacionesFiltradas);
+        }
+
+        async function descargarCapacitacion(id, nombre) {
+            try {
+                const response = await fetch(`${CONFIG.API_CAPACITACIONES}?id=${id}&download=1`);
+                
+                if (!response.ok) {
+                    throw new Error('Error al descargar el archivo');
+                }
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = nombre;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+                
+                // Mostrar mensaje de éxito
+                const Toast = Swal.mixin({
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000,
+                    timerProgressBar: true
+                });
+                
+                Toast.fire({
+                    icon: 'success',
+                    title: `${nombre} descargado correctamente`
+                });
+                
+            } catch (error) {
+                console.error('Error al descargar:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudo descargar el archivo. Inténtalo de nuevo.'
+                });
+            }
+        }
+
+        function verDetallesCapacitacion(id) {
+            const capacitacion = capacitacionesData.find(cap => cap.id == id);
+            if (!capacitacion) return;
+            
+            Swal.fire({
+                title: capacitacion.titulo,
+                html: `
+                    <div class="text-start">
+                        <p><strong>Descripción:</strong></p>
+                        <p class="text-muted">${capacitacion.descripcion || 'Sin descripción disponible'}</p>
+                        
+                        <p><strong>Archivo:</strong> ${capacitacion.archivo_nombre}</p>
+                        <p><strong>Tipo:</strong> ${capacitacion.archivo_tipo}</p>
+                        <p><strong>Fecha de creación:</strong> ${formatearFecha(capacitacion.fecha_creacion)}</p>
+                        ${capacitacion.fecha_actualizacion ? 
+                            `<p><strong>Última actualización:</strong> ${formatearFecha(capacitacion.fecha_actualizacion)}</p>` : 
+                            ''}
+                    </div>
+                `,
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Descargar',
+                cancelButtonText: 'Cerrar',
+                confirmButtonColor: capacitacion.archivo_tipo === 'PDF' ? '#dc3545' : '#0d6efd'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    descargarCapacitacion(capacitacion.id, capacitacion.archivo_nombre);
+                }
+            });
+        }
+
+        // ========== GESTIÓN DE MANUALES ==========
+        async function loadManualesUsuario() {
+            try {
+                document.getElementById('loadingManuales').classList.remove('d-none');
+                
+                const response = await fetch(`${CONFIG.API_BASE}/CRUD-admin/Crud-manuales.php?estado=1`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const manuales = await response.json();
+                
+                // Actualizar estadísticas
+                updateManualesStats(manuales);
+                
+                // Renderizar manuales
+                renderManualesUsuario(manuales);
+                
+                // Configurar filtros
+                setupManualesFilters(manuales);
+                
+            } catch (error) {
+                console.error('Error al cargar manuales:', error);
+                document.getElementById('manualesContainer').innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Error al cargar los manuales. Intente nuevamente.
+                        </div>
+                    </div>
+                `;
+            } finally {
+                document.getElementById('loadingManuales').classList.add('d-none');
+            }
+        }
+
+        function updateManualesStats(manuales) {
+            const total = manuales.length;
+            const pdfs = manuales.filter(m => m.archivo_tipo === 'PDF').length;
+            const word = manuales.filter(m => m.archivo_tipo === 'WORD').length;
+            const general = manuales.filter(m => m.categoria === 'general').length;
+            
+            document.getElementById('totalManualesUser').textContent = total;
+            document.getElementById('manualesPDFUser').textContent = pdfs;
+            document.getElementById('manualesWordUser').textContent = word;
+            document.getElementById('manualesGeneralUser').textContent = general;
+        }
+
+        function renderManualesUsuario(manuales) {
+            const container = document.getElementById('manualesContainer');
+            
+            if (manuales.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12">
+                        <div class="text-center p-5">
+                            <i class="bi bi-book fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay manuales disponibles</h4>
+                            <p class="text-muted">Aún no se han publicado manuales para consulta.</p>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = manuales.map(manual => `
+                <div class="col-lg-4 col-md-6 mb-4 manual-card" 
+                     data-categoria="${manual.categoria}" 
+                     data-tipo="${manual.archivo_tipo}"
+                     data-titulo="${manual.titulo.toLowerCase()}"
+                     data-descripcion="${(manual.descripcion || '').toLowerCase()}">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <h5 class="card-title mb-0">${manual.titulo}</h5>
+                                <span class="badge bg-primary">${manual.categoria}</span>
+                            </div>
+                            
+                            <p class="card-text text-muted mb-3">
+                                ${manual.descripcion || 'Sin descripción disponible'}
+                            </p>
+                            
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-file me-1"></i>${manual.archivo_tipo}
+                                    </small>
+                                </div>
+                                <div>
+                                    <small class="text-muted">
+                                        <i class="bi bi-tag me-1"></i>v${manual.version}
+                                    </small>
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-muted">
+                                    ${formatearFecha(manual.fecha_creacion)}
+                                </small>
+                                <button class="btn btn-primary btn-sm" onclick="descargarManualUsuario(${manual.id})">
+                                    <i class="bi bi-download me-1"></i>Descargar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function setupManualesFilters(manuales) {
+            const searchInput = document.getElementById('searchManuales');
+            const filterCategoria = document.getElementById('filterCategoria');
+            const filterTipo = document.getElementById('filterTipo');
+            
+            function aplicarFiltrosManuales() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const categoria = filterCategoria.value;
+                const tipo = filterTipo.value;
+                
+                const cards = document.querySelectorAll('.manual-card');
+                
+                cards.forEach(card => {
+                    const cardCategoria = card.dataset.categoria;
+                    const cardTipo = card.dataset.tipo;
+                    const cardTitulo = card.dataset.titulo;
+                    const cardDescripcion = card.dataset.descripcion;
+                    
+                    const matchSearch = !searchTerm || 
+                        cardTitulo.includes(searchTerm) || 
+                        cardDescripcion.includes(searchTerm);
+                    
+                    const matchCategoria = !categoria || cardCategoria === categoria;
+                    const matchTipo = !tipo || cardTipo === tipo;
+                    
+                    if (matchSearch && matchCategoria && matchTipo) {
+                        card.style.display = 'block';
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+            }
+            
+            searchInput.addEventListener('input', aplicarFiltrosManuales);
+            filterCategoria.addEventListener('change', aplicarFiltrosManuales);
+            filterTipo.addEventListener('change', aplicarFiltrosManuales);
+        }
+
+        async function descargarManualUsuario(id) {
+            try {
+                // Mostrar indicador de descarga
+                Swal.fire({
+                    title: 'Descargando...',
+                    text: 'Preparando el archivo para descarga',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Crear enlace de descarga
+                const downloadUrl = `${CONFIG.API_BASE}/CRUD-admin/Crud-manuales.php?id=${id}&download=1`;
+                
+                // Crear elemento temporal para descarga
+                const link = document.createElement('a');
+                link.href = downloadUrl;
+                link.target = '_blank';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                
+                // Cerrar indicador de carga
+                setTimeout(() => {
+                    Swal.close();
+                }, 1000);
+                
+            } catch (error) {
+                console.error('Error al descargar manual:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error de descarga',
+                    text: 'No se pudo descargar el manual. Intente nuevamente.'
+                });
             }
         }
     </script>

@@ -247,3 +247,30 @@ CREATE TABLE tickets_soporte (
     INDEX idx_email (email_solicitante),
     INDEX idx_tipo (tipo)
 );
+
+CREATE TABLE `Manuales` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `titulo` varchar(255) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `categoria` enum('usuario','administrador','tecnico','general') DEFAULT 'general',
+  `version` varchar(50) DEFAULT '1.0',
+  `archivo_nombre` varchar(255) NOT NULL,
+  `archivo_tipo` enum('PDF','WORD','HTML','TEXTO') DEFAULT 'PDF',
+  `archivo_contenido` longblob NOT NULL,
+  `estado` tinyint(1) DEFAULT 1,
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `fecha_actualizacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `creado_por` int(11) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_categoria` (`categoria`),
+  KEY `idx_estado` (`estado`),
+  KEY `idx_fecha_creacion` (`fecha_creacion`),
+  KEY `fk_creado_por` (`creado_por`),
+  CONSTRAINT `fk_manual_creado_por` FOREIGN KEY (`creado_por`) REFERENCES `usuarios` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Insertar algunos manuales de ejemplo
+INSERT INTO `Manuales` (`titulo`, `descripcion`, `categoria`, `version`, `archivo_nombre`, `archivo_tipo`, `archivo_contenido`, `estado`) VALUES
+('Manual de Usuario - Sistema ROOMIT', 'Guía completa para el uso del sistema de reservas de salas', 'usuario', '1.0', 'manual_usuario_roomit.pdf', 'PDF', '', 1),
+('Manual de Administrador', 'Documentación técnica para administradores del sistema', 'administrador', '1.2', 'manual_admin_roomit.pdf', 'PDF', '', 1),
+('Guía de Solución de Problemas', 'Manual técnico para resolver problemas comunes', 'tecnico', '1.1', 'guia_solucion_problemas.pdf', 'PDF', '', 1);
