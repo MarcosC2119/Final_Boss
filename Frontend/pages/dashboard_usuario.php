@@ -237,6 +237,13 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link nav-link-custom d-flex align-items-center py-2 px-3 rounded-3 mb-1" 
+                                       href="#mis-reservas" onclick="mostrarSeccion('mis-reservas')">
+                                        <i class="bi bi-calendar-check me-3 fs-5"></i>
+                                        <span class="fw-semibold">Mis Reservas</span>
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link nav-link-custom d-flex align-items-center py-2 px-3 rounded-3 mb-1" 
                                        href="#mis-qr" onclick="mostrarSeccion('mis-qr')">
                                         <i class="bi bi-qr-code me-3 fs-5"></i>
                                         <span class="fw-semibold">Mis Códigos QR</span>
@@ -971,6 +978,196 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                                     </div>
                                     <div id="manualesContainer" class="row">
                                         <!-- Los manuales se cargarán aquí dinámicamente -->
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ========== SECCIÓN: MIS RESERVAS ========== -->
+                    <div id="seccion-mis-reservas" class="content-section" style="display: none;">
+                        
+                        <!-- Header con título y acciones -->
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h4 class="fw-bold text-dark mb-1">
+                                    <i class="bi bi-calendar-check text-primary me-2"></i>Mis Reservas
+                                </h4>
+                                <p class="text-muted mb-0">Gestiona y visualiza todas tus reservas de salas</p>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-primary" onclick="cargarMisReservasCompleto()">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+                                </button>
+                                <button class="btn btn-primary" onclick="mostrarSeccion('nueva-reserva')">
+                                    <i class="bi bi-plus-circle me-1"></i>Nueva Reserva
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Estadísticas de reservas -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 h-100 shadow-sm" style="background: linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%);">
+                                    <div class="card-body text-center p-4">
+                                        <div class="bg-primary bg-opacity-15 rounded-circle d-inline-flex p-3 mb-3">
+                                            <i class="bi bi-calendar-check text-primary fs-2"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-primary mb-1" id="total-mis-reservas">0</h3>
+                                        <p class="text-primary fw-semibold mb-0">Total Reservas</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 h-100 shadow-sm" style="background: linear-gradient(135deg, #e8f5e9 0%, #81c784 100%);">
+                                    <div class="card-body text-center p-4">
+                                        <div class="bg-success bg-opacity-15 rounded-circle d-inline-flex p-3 mb-3">
+                                            <i class="bi bi-check-circle text-success fs-2"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-success mb-1" id="reservas-confirmadas">0</h3>
+                                        <p class="text-success fw-semibold mb-0">Confirmadas</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 h-100 shadow-sm" style="background: linear-gradient(135deg, #fff3e0 0%, #ffb74d 100%);">
+                                    <div class="card-body text-center p-4">
+                                        <div class="bg-warning bg-opacity-15 rounded-circle d-inline-flex p-3 mb-3">
+                                            <i class="bi bi-clock text-warning fs-2"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-warning mb-1" id="reservas-pendientes">0</h3>
+                                        <p class="text-warning fw-semibold mb-0">Pendientes</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-xl-3 col-md-6">
+                                <div class="card border-0 h-100 shadow-sm" style="background: linear-gradient(135deg, #ffebee 0%, #e57373 100%);">
+                                    <div class="card-body text-center p-4">
+                                        <div class="bg-danger bg-opacity-15 rounded-circle d-inline-flex p-3 mb-3">
+                                            <i class="bi bi-x-circle text-danger fs-2"></i>
+                                        </div>
+                                        <h3 class="fw-bold text-danger mb-1" id="reservas-canceladas">0</h3>
+                                        <p class="text-danger fw-semibold mb-0">Canceladas</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filtros y búsqueda -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-light border-0">
+                                        <h6 class="fw-bold text-dark mb-0">
+                                            <i class="bi bi-funnel me-2"></i>Filtros y Búsqueda
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row g-3 align-items-end">
+                                            <div class="col-lg-4 col-md-6">
+                                                <label class="form-label fw-semibold text-dark">Buscar reserva:</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light border-end-0">
+                                                        <i class="bi bi-search text-muted"></i>
+                                                    </span>
+                                                    <input type="text" class="form-control border-start-0" 
+                                                           id="buscar-mis-reservas" 
+                                                           placeholder="Buscar por sala, propósito o fecha...">
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-2 col-md-6">
+                                                <label class="form-label fw-semibold text-dark">Estado:</label>
+                                                <select class="form-select" id="filtro-estado-mis-reservas">
+                                                    <option value="">Todos los estados</option>
+                                                    <option value="confirmada">Confirmadas</option>
+                                                    <option value="pendiente">Pendientes</option>
+                                                    <option value="cancelada">Canceladas</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-lg-2 col-md-6">
+                                                <label class="form-label fw-semibold text-dark">Desde:</label>
+                                                <input type="date" class="form-control" id="filtro-fecha-desde">
+                                            </div>
+                                            <div class="col-lg-2 col-md-6">
+                                                <label class="form-label fw-semibold text-dark">Hasta:</label>
+                                                <input type="date" class="form-control" id="filtro-fecha-hasta">
+                                            </div>
+                                            <div class="col-lg-2 col-md-12">
+                                                <div class="d-flex gap-2">
+                                                    <button class="btn btn-primary flex-fill" onclick="aplicarFiltrosMisReservas()">
+                                                        <i class="bi bi-search me-1"></i>Buscar
+                                                    </button>
+                                                    <button class="btn btn-outline-secondary" onclick="limpiarFiltrosMisReservas()">
+                                                        <i class="bi bi-x-lg"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Lista de reservas -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card border-0 shadow-sm">
+                                    <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <h6 class="fw-bold text-dark mb-0">
+                                                <i class="bi bi-list-ul me-2"></i>Lista de Reservas
+                                            </h6>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <small class="text-muted" id="contador-reservas">Mostrando 0 reservas</small>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <button type="button" class="btn btn-outline-primary active" onclick="cambiarVista('lista')">
+                                                        <i class="bi bi-list"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-primary" onclick="cambiarVista('grid')">
+                                                        <i class="bi bi-grid"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Loading estado -->
+                                        <div id="loading-mis-reservas" class="text-center py-5" style="display: none;">
+                                            <div class="spinner-border text-primary mb-3" role="status" style="width: 3rem; height: 3rem;">
+                                                <span class="visually-hidden">Cargando...</span>
+                                            </div>
+                                            <h6 class="text-muted">Cargando tus reservas...</h6>
+                                            <p class="text-muted small mb-0">Por favor espera un momento</p>
+                                        </div>
+
+                                        <!-- Estado sin reservas -->
+                                        <div id="sin-mis-reservas" class="text-center py-5" style="display: none;">
+                                            <div class="mb-4">
+                                                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                                            </div>
+                                            <h5 class="text-muted mb-3">No tienes reservas</h5>
+                                            <p class="text-muted mb-4">¡Crea tu primera reserva para comenzar a usar las salas!</p>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button class="btn btn-primary" onclick="mostrarSeccion('nueva-reserva')">
+                                                    <i class="bi bi-plus-circle me-2"></i>Crear Primera Reserva
+                                                </button>
+                                                <button class="btn btn-outline-primary" onclick="mostrarSeccion('reservas')">
+                                                    <i class="bi bi-search me-2"></i>Explorar Salas
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Lista de reservas (vista lista) -->
+                                        <div id="lista-mis-reservas-vista-lista" class="vista-reservas">
+                                            <!-- Se cargarán las reservas aquí dinámicamente -->
+                                        </div>
+
+                                        <!-- Lista de reservas (vista grid) -->
+                                        <div id="lista-mis-reservas-vista-grid" class="vista-reservas" style="display: none;">
+                                            <div class="row g-3" id="grid-mis-reservas">
+                                                <!-- Se cargarán las reservas aquí dinámicamente -->
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -3469,6 +3666,607 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                 </span>
             `;
         }
+
+        // ========== FUNCIONES DE MIS RESERVAS ==========
+        // Variables globales para mis reservas
+        let misReservasData = [];
+        let misReservasEstadisticas = {
+            total: 0,
+            confirmadas: 0,
+            pendientes: 0,
+            canceladas: 0
+        };
+        let currentPageMisReservas = 1;
+        let isLoadingMisReservas = false;
+
+        // Función principal para cargar mis reservas completo
+        async function cargarMisReservasCompleto() {
+            const loadingElement = document.getElementById('loading-mis-reservas');
+            const sinReservasElement = document.getElementById('sin-mis-reservas');
+            const listaElementoLista = document.getElementById('lista-mis-reservas-vista-lista');
+            const listaElementoGrid = document.getElementById('lista-mis-reservas-vista-grid');
+
+            try {
+                // Mostrar loading
+                if (loadingElement) loadingElement.style.display = 'block';
+                if (sinReservasElement) sinReservasElement.style.display = 'none';
+                if (listaElementoLista) listaElementoLista.style.display = 'none';
+                if (listaElementoGrid) listaElementoGrid.style.display = 'none';
+
+                isLoadingMisReservas = true;
+
+                // Obtener ID del usuario desde localStorage
+                const userData = JSON.parse(localStorage.getItem('userData'));
+                if (!userData || !userData.id) {
+                    throw new Error('Sesión expirada. Por favor, inicie sesión nuevamente.');
+                }
+
+                // Obtener filtros actuales
+                const filtros = obtenerFiltrosMisReservas();
+                
+                // Construir URL con parámetros
+                const params = new URLSearchParams({
+                    usuario_id: userData.id,
+                    page: currentPageMisReservas,
+                    per_page: 20
+                });
+
+                // Agregar filtros si existen
+                if (filtros.busqueda) params.append('search', filtros.busqueda);
+                if (filtros.estado) params.append('estado', filtros.estado);
+                if (filtros.fechaDesde) params.append('fecha_desde', filtros.fechaDesde);
+                if (filtros.fechaHasta) params.append('fecha_hasta', filtros.fechaHasta);
+
+                const response = await fetch(`${CONFIG.API_RESERVAS}?${params}`);
+                const data = await response.json();
+
+                if (data.success) {
+                    misReservasData = data.data || [];
+                    
+                    // Actualizar estadísticas
+                    actualizarEstadisticasMisReservas(misReservasData);
+                    
+                    // Mostrar las reservas
+                    if (misReservasData.length === 0) {
+                        if (sinReservasElement) sinReservasElement.style.display = 'block';
+                    } else {
+                        renderizarMisReservas(misReservasData);
+                    }
+                    
+                    // Actualizar contador
+                    actualizarContadorReservas(data.total || misReservasData.length);
+                    
+                } else {
+                    throw new Error(data.error || 'Error al cargar las reservas');
+                }
+
+            } catch (error) {
+                console.error('Error al cargar mis reservas:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar las reservas: ' + error.message
+                });
+                
+                if (sinReservasElement) sinReservasElement.style.display = 'block';
+                
+            } finally {
+                if (loadingElement) loadingElement.style.display = 'none';
+                isLoadingMisReservas = false;
+            }
+        }
+
+        // Función para obtener filtros actuales
+        function obtenerFiltrosMisReservas() {
+            return {
+                busqueda: document.getElementById('buscar-mis-reservas')?.value?.trim() || '',
+                estado: document.getElementById('filtro-estado-mis-reservas')?.value || '',
+                fechaDesde: document.getElementById('filtro-fecha-desde')?.value || '',
+                fechaHasta: document.getElementById('filtro-fecha-hasta')?.value || ''
+            };
+        }
+
+        // Función para aplicar filtros
+        async function aplicarFiltrosMisReservas() {
+            currentPageMisReservas = 1; // Resetear a primera página
+            await cargarMisReservasCompleto();
+        }
+
+        // Función para limpiar filtros
+        async function limpiarFiltrosMisReservas() {
+            // Limpiar campos de filtro
+            const buscarInput = document.getElementById('buscar-mis-reservas');
+            const estadoSelect = document.getElementById('filtro-estado-mis-reservas');
+            const fechaDesdeInput = document.getElementById('filtro-fecha-desde');
+            const fechaHastaInput = document.getElementById('filtro-fecha-hasta');
+
+            if (buscarInput) buscarInput.value = '';
+            if (estadoSelect) estadoSelect.value = '';
+            if (fechaDesdeInput) fechaDesdeInput.value = '';
+            if (fechaHastaInput) fechaHastaInput.value = '';
+
+            // Recargar reservas
+            currentPageMisReservas = 1;
+            await cargarMisReservasCompleto();
+        }
+
+        // Función para actualizar estadísticas
+        function actualizarEstadisticasMisReservas(reservas) {
+            const estadisticas = {
+                total: reservas.length,
+                confirmadas: reservas.filter(r => r.estado === 'confirmada').length,
+                pendientes: reservas.filter(r => r.estado === 'pendiente').length,
+                canceladas: reservas.filter(r => r.estado === 'cancelada').length
+            };
+
+            // Actualizar elementos en el DOM
+            const totalElement = document.getElementById('total-mis-reservas');
+            const confirmadasElement = document.getElementById('reservas-confirmadas');
+            const pendientesElement = document.getElementById('reservas-pendientes');
+            const canceladasElement = document.getElementById('reservas-canceladas');
+
+            if (totalElement) totalElement.textContent = estadisticas.total;
+            if (confirmadasElement) confirmadasElement.textContent = estadisticas.confirmadas;
+            if (pendientesElement) pendientesElement.textContent = estadisticas.pendientes;
+            if (canceladasElement) canceladasElement.textContent = estadisticas.canceladas;
+
+            misReservasEstadisticas = estadisticas;
+        }
+
+        // Función para renderizar reservas
+        function renderizarMisReservas(reservas) {
+            const vistaActual = obtenerVistaActual();
+            
+            if (vistaActual === 'lista') {
+                renderizarVistaLista(reservas);
+            } else {
+                renderizarVistaGrid(reservas);
+            }
+        }
+
+        // Función para renderizar vista lista
+        function renderizarVistaLista(reservas) {
+            const container = document.getElementById('lista-mis-reservas-vista-lista');
+            if (!container) return;
+
+            const html = reservas.map(reserva => `
+                <div class="card border-0 mb-3 shadow-sm rounded-3 reserva-card" 
+                     style="border-left: 4px solid ${getColorEstadoReserva(reserva.estado)} !important;">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-start mb-3">
+                                    <div class="me-3">
+                                        <i class="bi bi-door-closed text-primary fs-4"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="fw-bold text-primary mb-2">
+                                            ${reserva.sala_nombre}
+                                            <small class="text-muted ms-2">(${reserva.sala_tipo})</small>
+                                        </h6>
+                                        <p class="text-dark mb-2 fw-semibold">${reserva.proposito}</p>
+                                        <div class="d-flex flex-wrap gap-3 mb-2">
+                                            <small class="text-muted">
+                                                <i class="bi bi-calendar-event text-primary me-1"></i>
+                                                ${formatearFechaReserva(reserva.fecha_reserva)}
+                                            </small>
+                                            <small class="text-muted">
+                                                <i class="bi bi-clock text-primary me-1"></i>
+                                                ${reserva.hora_inicio} - ${reserva.hora_fin}
+                                            </small>
+                                            ${getBadgeEstadoReserva(reserva.estado)}
+                                        </div>
+                                        ${reserva.notas ? `
+                                            <small class="text-muted">
+                                                <i class="bi bi-sticky text-warning me-1"></i>
+                                                ${reserva.notas}
+                                            </small>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="d-flex flex-column gap-2">
+                                    ${getAccionesReserva(reserva)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+            container.style.display = 'block';
+        }
+
+        // Función para renderizar vista grid
+        function renderizarVistaGrid(reservas) {
+            const container = document.getElementById('grid-mis-reservas');
+            if (!container) return;
+
+            const html = reservas.map(reserva => `
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card border-0 h-100 shadow-sm rounded-3 reserva-card-grid" 
+                         style="border-left: 4px solid ${getColorEstadoReserva(reserva.estado)} !important;">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-start mb-3">
+                                <div class="me-2">
+                                    <i class="bi bi-door-closed text-primary fs-5"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="fw-bold text-primary mb-1 text-truncate">${reserva.sala_nombre}</h6>
+                                    <small class="text-muted">${reserva.sala_tipo}</small>
+                                </div>
+                                ${getBadgeEstadoReserva(reserva.estado)}
+                            </div>
+                            
+                            <p class="text-dark small mb-2 fw-semibold text-truncate" title="${reserva.proposito}">
+                                ${reserva.proposito}
+                            </p>
+                            
+                            <div class="mb-3">
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-calendar-event text-primary me-1"></i>
+                                    ${formatearFechaReserva(reserva.fecha_reserva)}
+                                </small>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-clock text-primary me-1"></i>
+                                    ${reserva.hora_inicio} - ${reserva.hora_fin}
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex gap-1">
+                                ${getAccionesReservaCompactas(reserva)}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = html;
+            
+            const gridContainer = document.getElementById('lista-mis-reservas-vista-grid');
+            if (gridContainer) gridContainer.style.display = 'block';
+        }
+
+        // Funciones auxiliares para mis reservas
+        function getColorEstadoReserva(estado) {
+            const colores = {
+                'confirmada': '#28a745',
+                'pendiente': '#ffc107',
+                'cancelada': '#dc3545',
+                'completada': '#6f42c1'
+            };
+            return colores[estado] || '#6c757d';
+        }
+
+        function getBadgeEstadoReserva(estado) {
+            const badges = {
+                'confirmada': '<span class="badge bg-success">Confirmada</span>',
+                'pendiente': '<span class="badge bg-warning">Pendiente</span>',
+                'cancelada': '<span class="badge bg-danger">Cancelada</span>',
+                'completada': '<span class="badge bg-primary">Completada</span>'
+            };
+            return badges[estado] || '<span class="badge bg-secondary">Desconocido</span>';
+        }
+
+        function formatearFechaReserva(fecha) {
+            const date = new Date(fecha + 'T00:00:00');
+            const hoy = new Date();
+            const mañana = new Date(hoy);
+            mañana.setDate(hoy.getDate() + 1);
+            
+            if (date.toDateString() === hoy.toDateString()) {
+                return 'Hoy, ' + date.toLocaleDateString('es-ES');
+            } else if (date.toDateString() === mañana.toDateString()) {
+                return 'Mañana, ' + date.toLocaleDateString('es-ES');
+            } else {
+                return date.toLocaleDateString('es-ES', {
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+            }
+        }
+
+        function getAccionesReserva(reserva) {
+            const acciones = [];
+            
+            // Solo mostrar acciones para reservas no canceladas
+            if (reserva.estado !== 'cancelada') {
+                acciones.push(`
+                    <button class="btn btn-primary btn-sm rounded-pill" onclick="verQRReserva(${reserva.id})">
+                        <i class="bi bi-qr-code me-1"></i>Ver QR
+                    </button>
+                `);
+                
+                // Solo permitir cancelar reservas futuras
+                const fechaReserva = new Date(reserva.fecha_reserva + 'T00:00:00');
+                const hoy = new Date();
+                
+                if (fechaReserva >= hoy && reserva.estado === 'confirmada') {
+                    acciones.push(`
+                        <button class="btn btn-outline-danger btn-sm rounded-pill" onclick="cancelarReserva(${reserva.id}, '${reserva.proposito}')">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                        </button>
+                    `);
+                }
+            }
+            
+            acciones.push(`
+                <button class="btn btn-outline-primary btn-sm rounded-pill" onclick="verDetallesReserva(${reserva.id})">
+                    <i class="bi bi-eye me-1"></i>Ver Detalles
+                </button>
+            `);
+            
+            return acciones.join('');
+        }
+
+        function getAccionesReservaCompactas(reserva) {
+            const acciones = [];
+            
+            if (reserva.estado !== 'cancelada') {
+                acciones.push(`
+                    <button class="btn btn-primary btn-sm flex-fill" onclick="verQRReserva(${reserva.id})" title="Ver QR">
+                        <i class="bi bi-qr-code"></i>
+                    </button>
+                `);
+                
+                const fechaReserva = new Date(reserva.fecha_reserva + 'T00:00:00');
+                const hoy = new Date();
+                
+                if (fechaReserva >= hoy && reserva.estado === 'confirmada') {
+                    acciones.push(`
+                        <button class="btn btn-outline-danger btn-sm flex-fill" onclick="cancelarReserva(${reserva.id}, '${reserva.proposito}')" title="Cancelar">
+                            <i class="bi bi-x-circle"></i>
+                        </button>
+                    `);
+                }
+            }
+            
+            acciones.push(`
+                <button class="btn btn-outline-primary btn-sm flex-fill" onclick="verDetallesReserva(${reserva.id})" title="Ver Detalles">
+                    <i class="bi bi-eye"></i>
+                </button>
+            `);
+            
+            return acciones.join('');
+        }
+
+        function obtenerVistaActual() {
+            // Verificar qué botón está activo
+            const botones = document.querySelectorAll('#seccion-mis-reservas .btn-group button');
+            for (let boton of botones) {
+                if (boton.classList.contains('active')) {
+                    return boton.querySelector('i').classList.contains('bi-list') ? 'lista' : 'grid';
+                }
+            }
+            return 'lista'; // Por defecto
+        }
+
+        // Función para cambiar vista
+        function cambiarVista(vista) {
+            const listaContainer = document.getElementById('lista-mis-reservas-vista-lista');
+            const gridContainer = document.getElementById('lista-mis-reservas-vista-grid');
+            const botones = document.querySelectorAll('#seccion-mis-reservas .btn-group button');
+            
+            // Actualizar botones activos
+            botones.forEach(btn => btn.classList.remove('active'));
+            
+            if (vista === 'lista') {
+                if (listaContainer) listaContainer.style.display = 'block';
+                if (gridContainer) gridContainer.style.display = 'none';
+                document.querySelector('[onclick="cambiarVista(\'lista\')"]')?.classList.add('active');
+            } else {
+                if (listaContainer) listaContainer.style.display = 'none';
+                if (gridContainer) gridContainer.style.display = 'block';
+                document.querySelector('[onclick="cambiarVista(\'grid\')"]')?.classList.add('active');
+            }
+            
+            // Re-renderizar en la nueva vista
+            if (misReservasData.length > 0) {
+                renderizarMisReservas(misReservasData);
+            }
+        }
+
+        function actualizarContadorReservas(total) {
+            const contador = document.getElementById('contador-reservas');
+            if (contador) {
+                contador.textContent = `Mostrando ${total} reserva${total !== 1 ? 's' : ''}`;
+            }
+        }
+
+        // Funciones de acción para reservas
+        async function verQRReserva(reservaId) {
+            Swal.fire({
+                title: 'Código QR de Reserva',
+                html: `
+                    <div class="text-center">
+                        <div class="mb-3">
+                            <div class="d-inline-block p-3 bg-light rounded">
+                                <div id="qr-code-${reservaId}" style="width: 200px; height: 200px;"></div>
+                            </div>
+                        </div>
+                        <p class="text-muted small">
+                            Presenta este código QR para acceder a la sala
+                        </p>
+                    </div>
+                `,
+                showCloseButton: true,
+                showConfirmButton: false,
+                width: 400,
+                didOpen: () => {
+                    // Placeholder para QR code
+                    const qrContainer = document.getElementById(`qr-code-${reservaId}`);
+                    qrContainer.innerHTML = `
+                        <div class="d-flex align-items-center justify-content-center h-100 bg-primary text-white">
+                            <div class="text-center">
+                                <i class="bi bi-qr-code fs-1"></i>
+                                <div class="small mt-2">QR #${reservaId}</div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+        }
+
+        async function cancelarReserva(reservaId, proposito) {
+            const result = await Swal.fire({
+                title: '¿Cancelar reserva?',
+                text: `Se cancelará la reserva "${proposito}"`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, cancelar',
+                cancelButtonText: 'No, mantener'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    Swal.fire({
+                        title: 'Cancelando reserva...',
+                        allowOutsideClick: false,
+                        showConfirmButton: false,
+                        willOpen: () => Swal.showLoading()
+                    });
+
+                    const response = await fetch(CONFIG.API_RESERVAS, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            id: reservaId,
+                            estado: 'cancelada'
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Reserva cancelada',
+                            text: 'La reserva ha sido cancelada exitosamente',
+                            timer: 2000,
+                            showConfirmButton: false
+                        });
+
+                        // Recargar las reservas
+                        await cargarMisReservasCompleto();
+                    } else {
+                        throw new Error(data.error || 'Error al cancelar la reserva');
+                    }
+
+                } catch (error) {
+                    console.error('Error:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'No se pudo cancelar la reserva: ' + error.message
+                    });
+                }
+            }
+        }
+
+        async function verDetallesReserva(reservaId) {
+            try {
+                const response = await fetch(`${CONFIG.API_RESERVAS}?id=${reservaId}`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const reserva = data.data;
+                    
+                    Swal.fire({
+                        title: 'Detalles de la Reserva',
+                        html: `
+                            <div class="text-start">
+                                <div class="row mb-3">
+                                    <div class="col-sm-4"><strong>Sala:</strong></div>
+                                    <div class="col-sm-8">${reserva.sala_nombre} (${reserva.sala_tipo})</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4"><strong>Fecha:</strong></div>
+                                    <div class="col-sm-8">${formatearFechaReserva(reserva.fecha_reserva)}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4"><strong>Horario:</strong></div>
+                                    <div class="col-sm-8">${reserva.hora_inicio} - ${reserva.hora_fin}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4"><strong>Propósito:</strong></div>
+                                    <div class="col-sm-8">${reserva.proposito}</div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-sm-4"><strong>Estado:</strong></div>
+                                    <div class="col-sm-8">${getBadgeEstadoReserva(reserva.estado)}</div>
+                                </div>
+                                ${reserva.notas ? `
+                                    <div class="row mb-3">
+                                        <div class="col-sm-4"><strong>Notas:</strong></div>
+                                        <div class="col-sm-8">${reserva.notas}</div>
+                                    </div>
+                                ` : ''}
+                                <div class="row mb-3">
+                                    <div class="col-sm-4"><strong>Creada:</strong></div>
+                                    <div class="col-sm-8">${new Date(reserva.fecha_creacion).toLocaleString('es-ES')}</div>
+                                </div>
+                            </div>
+                        `,
+                        width: 600,
+                        confirmButtonText: 'Cerrar'
+                    });
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar los detalles de la reserva'
+                });
+            }
+        }
+
+        // Event listeners para mis reservas
+        document.addEventListener('DOMContentLoaded', function() {
+            // Event listener para búsqueda en tiempo real
+            const buscarInput = document.getElementById('buscar-mis-reservas');
+            if (buscarInput) {
+                let searchTimeout;
+                buscarInput.addEventListener('input', function() {
+                    clearTimeout(searchTimeout);
+                    searchTimeout = setTimeout(() => {
+                        aplicarFiltrosMisReservas();
+                    }, 500);
+                });
+            }
+            
+            // Event listeners para filtros
+            const estadoSelect = document.getElementById('filtro-estado-mis-reservas');
+            if (estadoSelect) {
+                estadoSelect.addEventListener('change', aplicarFiltrosMisReservas);
+            }
+        });
+
+        // Actualizar la función cargarMisReservas para usar la nueva función completa
+        function cargarMisReservas() {
+            cargarMisReservasCompleto();
+        }
+
+        // Cargar automáticamente al mostrar la sección
+        const originalMostrarSeccion = window.mostrarSeccion;
+        window.mostrarSeccion = function(seccion) {
+            originalMostrarSeccion(seccion);
+            
+            if (seccion === 'mis-reservas') {
+                // Cargar las reservas cuando se muestre la sección
+                setTimeout(() => {
+                    cargarMisReservasCompleto();
+                }, 100);
+            }
+        };
     </script>
 </body>
 </html>

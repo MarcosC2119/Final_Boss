@@ -59,7 +59,10 @@ function handleRead() {
     $id = isset($_GET['id']) ? intval($_GET['id']) : null;
     $estado = isset($_GET['estado']) ? trim($_GET['estado']) : '';
     $sala_id = isset($_GET['sala_id']) ? intval($_GET['sala_id']) : null;
+    $usuario_id = isset($_GET['usuario_id']) ? intval($_GET['usuario_id']) : null;
     $fecha = isset($_GET['fecha']) ? trim($_GET['fecha']) : '';
+    $fecha_desde = isset($_GET['fecha_desde']) ? trim($_GET['fecha_desde']) : '';
+    $fecha_hasta = isset($_GET['fecha_hasta']) ? trim($_GET['fecha_hasta']) : '';
     $page = isset($_GET['page']) ? max(1, intval($_GET['page'])) : 1;
     $per_page = isset($_GET['per_page']) ? max(1, min(100, intval($_GET['per_page']))) : 10;
 
@@ -87,7 +90,7 @@ function handleRead() {
             throw new Exception('Reserva no encontrada');
         }
 
-    } elseif (!empty($search_query) || !empty($estado) || !empty($sala_id) || !empty($fecha)) {
+    } elseif (!empty($search_query) || !empty($estado) || !empty($sala_id) || !empty($usuario_id) || !empty($fecha) || !empty($fecha_desde) || !empty($fecha_hasta)) {
         // ========== BÚSQUEDA Y FILTROS ==========
         $where_conditions = [];
         $params = [];
@@ -95,12 +98,13 @@ function handleRead() {
 
         // Búsqueda por texto (propósito o nombre de usuario)
         if (!empty($search_query)) {
-            $where_conditions[] = "(r.proposito LIKE ? OR u.nombre LIKE ? OR u.email LIKE ?)";
+            $where_conditions[] = "(r.proposito LIKE ? OR u.nombre LIKE ? OR u.email LIKE ? OR s.nombre LIKE ?)";
             $search_term = "%" . $search_query . "%";
             $params[] = $search_term;
             $params[] = $search_term;
             $params[] = $search_term;
-            $types .= "sss";
+            $params[] = $search_term;
+            $types .= "ssss";
         }
 
         // Filtro por estado
@@ -117,10 +121,30 @@ function handleRead() {
             $types .= "i";
         }
 
-        // Filtro por fecha
+        // Filtro por usuario
+        if (!empty($usuario_id)) {
+            $where_conditions[] = "r.usuario_id = ?";
+            $params[] = $usuario_id;
+            $types .= "i";
+        }
+
+        // Filtro por fecha específica
         if (!empty($fecha)) {
             $where_conditions[] = "r.fecha_reserva = ?";
             $params[] = $fecha;
+            $types .= "s";
+        }
+
+        // Filtro por rango de fechas
+        if (!empty($fecha_desde)) {
+            $where_conditions[] = "r.fecha_reserva >= ?";
+            $params[] = $fecha_desde;
+            $types .= "s";
+        }
+
+        if (!empty($fecha_hasta)) {
+            $where_conditions[] = "r.fecha_reserva <= ?";
+            $params[] = $fecha_hasta;
             $types .= "s";
         }
 
@@ -173,7 +197,10 @@ function handleRead() {
                 'query' => $search_query,
                 'estado' => $estado,
                 'sala_id' => $sala_id,
-                'fecha' => $fecha
+                'usuario_id' => $usuario_id,
+                'fecha' => $fecha,
+                'fecha_desde' => $fecha_desde,
+                'fecha_hasta' => $fecha_hasta
             ],
             'pagination' => [
                 'current_page' => $page,
