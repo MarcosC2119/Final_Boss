@@ -67,13 +67,16 @@ session_start();
         <div class="card mb-4">
             <div class="card-body">
                 <div class="row g-3">
-                    <div class="col-md-3">
-                        <div class="input-group">
-                            <span class="input-group-text bg-white">
-                                <i class="bi bi-search"></i>
-                            </span>
-                            <input type="text" id="searchInput" class="form-control" placeholder="Buscar por propósito o usuario...">
-                        </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Buscar reservas</label>
+                        <input type="text" 
+                               id="searchInput" 
+                               class="form-control" 
+                               placeholder="Buscar por usuario, email, sala, propósito...">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Busca por nombre de usuario, email, sala o propósito de la reserva
+                        </small>
                     </div>
                     <div class="col-md-2">
                         <select id="filtroEstado" class="form-select">
@@ -380,6 +383,9 @@ session_start();
                 if (data.success) {
                     mostrarReservas(data.data);
                     actualizarPaginacion(data.pagination);
+                    
+                    // Actualizar contador de resultados
+                    actualizarContadorResultados(data.total || 0, data.data?.length || 0);
                 } else {
                     throw new Error(data.message || 'Error al cargar las reservas');
                 }
@@ -405,18 +411,25 @@ session_start();
                 <tr>
                     <td>
                         <div class="d-flex align-items-center">
-                            <div class="reserva-avatar me-3">
+                            <div class="reserva-avatar me-3" style="width: 45px; height: 45px; border-radius: 50%; background: linear-gradient(135deg, #007bff, #0056b3); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px;">
                                 ${reserva.usuario_nombre.charAt(0).toUpperCase()}
                             </div>
                             <div>
-                                <h6 class="mb-0">${reserva.usuario_nombre}</h6>
-                                <small class="text-muted">${reserva.usuario_email}</small>
+                                <h6 class="mb-0 fw-bold text-dark">${reserva.usuario_nombre}</h6>
+                                <small class="text-muted">
+                                    <i class="bi bi-envelope me-1"></i>${reserva.usuario_email}
+                                </small>
+                                <div class="mt-1">
+                                    <span class="badge bg-light text-dark small">
+                                        <i class="bi bi-person me-1"></i>Usuario ID: ${reserva.usuario_id}
+                                    </span>
+                                </div>
                             </div>
                         </div>
                     </td>
                     <td>
                         <div>
-                            <span class="fw-bold">${reserva.sala_nombre}</span>
+                            <span class="fw-bold text-primary">${reserva.sala_nombre}</span>
                             <br>
                             <small class="text-muted">
                                 <i class="bi ${getSalaTipoIcon(reserva.sala_tipo)} me-1"></i>
@@ -426,32 +439,41 @@ session_start();
                     </td>
                     <td>
                         <div>
-                            <span class="fecha-badge">${formatearFecha(reserva.fecha_reserva)}</span>
+                            <span class="fecha-badge fw-semibold text-dark">${formatearFecha(reserva.fecha_reserva)}</span>
                             <br>
-                            <small class="horario-badge bg-light text-dark mt-1">
+                            <small class="horario-badge bg-light text-dark mt-1 px-2 py-1 rounded">
                                 <i class="bi bi-clock me-1"></i>
                                 ${reserva.hora_inicio} - ${reserva.hora_fin}
                             </small>
                         </div>
                     </td>
                     <td>
-                        <span class="text-dark">${reserva.proposito}</span>
+                        <span class="text-dark fw-semibold">${reserva.proposito}</span>
+                        ${reserva.fecha_creacion ? `
+                            <br><small class="text-muted">
+                                <i class="bi bi-calendar-plus me-1"></i>
+                                Creada: ${new Date(reserva.fecha_creacion).toLocaleDateString('es-ES')}
+                            </small>
+                        ` : ''}
                     </td>
                     <td>
-                        <span class="badge bg-${getEstadoColor(reserva.estado)}">
+                        <span class="badge bg-${getEstadoColor(reserva.estado)} px-3 py-2">
                             <i class="bi ${getEstadoIcon(reserva.estado)} me-1"></i>
                             ${reserva.estado.charAt(0).toUpperCase() + reserva.estado.slice(1)}
                         </span>
                     </td>
                     <td>
-                        <span class="text-muted small">${reserva.notas || 'Sin notas'}</span>
+                        <span class="text-muted small">${reserva.notas || 'Sin notas adicionales'}</span>
                     </td>
                     <td class="text-end">
                         <div class="btn-group btn-group-sm">
-                            <button type="button" class="btn btn-outline-primary" onclick="editarReserva(${reserva.id})" title="Editar">
+                            <button type="button" class="btn btn-outline-primary" onclick="editarReserva(${reserva.id})" title="Editar reserva">
                                 <i class="bi bi-pencil"></i>
                             </button>
-                            <button type="button" class="btn btn-outline-danger" onclick="eliminarReserva(${reserva.id}, '${reserva.proposito}')" title="Eliminar">
+                            <button type="button" class="btn btn-outline-info" onclick="verDetallesReservaAdmin(${reserva.id})" title="Ver detalles completos">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-danger" onclick="eliminarReserva(${reserva.id}, '${reserva.proposito}')" title="Eliminar reserva">
                                 <i class="bi bi-trash"></i>
                             </button>
                         </div>
@@ -854,6 +876,153 @@ session_start();
                     console.error('Error:', error);
                     mostrarError(error.message || 'Error al eliminar la reserva');
                 }
+            }
+        }
+
+        // ========== VER DETALLES COMPLETOS DE RESERVA (ADMIN) ==========
+        async function verDetallesReservaAdmin(reservaId) {
+            try {
+                const response = await fetch(`../../../Backend/api/reservas/Metodos-Reservas.php?id=${reservaId}`);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const reserva = data.data;
+                    
+                    Swal.fire({
+                        title: 'Detalles Completos de la Reserva',
+                        html: `
+                            <div class="text-start">
+                                <div class="row mb-4">
+                                    <div class="col-12">
+                                        <div class="card bg-light border-0">
+                                            <div class="card-body">
+                                                <h6 class="card-title text-primary mb-3">
+                                                    <i class="bi bi-person-circle me-2"></i>Información del Usuario
+                                                </h6>
+                                                <div class="row">
+                                                    <div class="col-sm-6">
+                                                        <strong>Nombre:</strong><br>
+                                                        <span class="text-dark">${reserva.usuario_nombre}</span>
+                                                    </div>
+                                                    <div class="col-sm-6">
+                                                        <strong>Email:</strong><br>
+                                                        <span class="text-dark">${reserva.usuario_email}</span>
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-2">
+                                                    <div class="col-sm-6">
+                                                        <strong>ID Usuario:</strong><br>
+                                                        <span class="badge bg-secondary">${reserva.usuario_id}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-sm-6">
+                                        <strong>ID Reserva:</strong><br>
+                                        <span class="badge bg-primary">#${reserva.id}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Estado:</strong><br>
+                                        <span class="badge bg-${getEstadoColor(reserva.estado)}">
+                                            <i class="bi ${getEstadoIcon(reserva.estado)} me-1"></i>
+                                            ${reserva.estado.charAt(0).toUpperCase() + reserva.estado.slice(1)}
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-sm-6">
+                                        <strong>Sala:</strong><br>
+                                        <span class="text-dark">${reserva.sala_nombre}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Tipo de Sala:</strong><br>
+                                        <span class="text-dark">${reserva.sala_tipo}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-sm-6">
+                                        <strong>Fecha:</strong><br>
+                                        <span class="text-dark">${formatearFecha(reserva.fecha_reserva)}</span>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <strong>Horario:</strong><br>
+                                        <span class="text-dark">${reserva.hora_inicio} - ${reserva.hora_fin}</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <strong>Propósito de la Reserva:</strong><br>
+                                        <div class="bg-light p-2 rounded mt-1">
+                                            ${reserva.proposito}
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                ${reserva.notas ? `
+                                    <div class="row mb-3">
+                                        <div class="col-12">
+                                            <strong>Notas Adicionales:</strong><br>
+                                            <div class="bg-light p-2 rounded mt-1">
+                                                ${reserva.notas}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ` : ''}
+                                
+                                <div class="row mb-3">
+                                    <div class="col-sm-6">
+                                        <strong>Fecha de Creación:</strong><br>
+                                        <span class="text-muted small">
+                                            ${reserva.fecha_creacion ? new Date(reserva.fecha_creacion).toLocaleString('es-ES') : 'No disponible'}
+                                        </span>
+                                    </div>
+                                    ${reserva.fecha_actualizacion ? `
+                                        <div class="col-sm-6">
+                                            <strong>Última Actualización:</strong><br>
+                                            <span class="text-muted small">
+                                                ${new Date(reserva.fecha_actualizacion).toLocaleString('es-ES')}
+                                            </span>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        `,
+                        width: 700,
+                        confirmButtonText: 'Cerrar',
+                        showCancelButton: true,
+                        cancelButtonText: 'Editar Reserva',
+                        cancelButtonColor: '#0d6efd',
+                        confirmButtonColor: '#6c757d'
+                    }).then((result) => {
+                        if (result.dismiss === Swal.DismissReason.cancel) {
+                            // Si hace clic en "Editar Reserva"
+                            editarReserva(reservaId);
+                        }
+                    });
+                } else {
+                    throw new Error('No se pudo cargar la información de la reserva');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar los detalles de la reserva: ' + error.message
+                });
+            }
+        }
+
+        function actualizarContadorResultados(total, mostrados) {
+            const contador = document.getElementById('contador-resultados');
+            if (contador) {
+                contador.textContent = `Mostrando ${mostrados} de ${total} reservas`;
             }
         }
 
