@@ -1075,7 +1075,9 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
             emailUsuario: '<?= $email_usuario ?>',
             API_SOPORTE: '../../Backend/api/SoporteTecnico/Metodos-soporte.php',
             API_CAPACITACIONES: '../../Backend/CRUD-admin/crud-capacitaciones.php',
-            API_BASE: '../../Backend',  // ← AGREGAR ESTA LÍNEA
+            API_BASE: '../../Backend',
+            API_SALAS: '../../Backend/api/Salas/Metodos-Salas.php',
+            API_RESERVAS: '../../Backend/api/Reservas/Metodos-reservas.php',
             INACTIVIDAD_TIMEOUT: 30 * 60 * 1000,
             ACTUALIZACION_INTERVAL: 30000
         };
@@ -1091,7 +1093,216 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
             mostrarSeccion('resumen');
             cargarMisTickets();
             initEventListeners();
+            
+            // Event listener para el formulario de nueva reserva
+            const formNuevaReserva = document.getElementById('form-nueva-reserva');
+            if (formNuevaReserva) {
+                formNuevaReserva.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    await crearNuevaReserva();
+                });
+            }
         });
+
+        // ========== FUNCIÓN CORREGIDA PARA CREAR NUEVA RESERVA ==========
+        async function crearNuevaReserva() {
+            try {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Creando reserva...',
+                    text: 'Por favor espera',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+
+                // Obtener ID del usuario desde localStorage (guardado en el login)
+                const userData = JSON.parse(localStorage.getItem('userData'));
+                if (!userData || !userData.id) {
+                    throw new Error('Sesión expirada. Por favor, inicie sesión nuevamente.');
+                }
+                
+                // Capturar valores del formulario usando los IDs correctos
+                const salaId = document.getElementById('sala-reserva').value;
+                const fechaReserva = document.getElementById('fecha-reserva').value;
+                const horaInicio = document.getElementById('hora-inicio').value;
+                const horaFin = document.getElementById('hora-fin').value;
+                const proposito = document.getElementById('proposito-reserva').value;
+                const numAsistentes = document.getElementById('num-asistentes').value;
+
+                // Debug: verificar que se están capturando los valores
+                console.log('Valores capturados:', {
+                    usuarioId: userData.id,
+                    salaId,
+                    fechaReserva,
+                    horaInicio,
+                    horaFin,
+                    proposito,
+                    numAsistentes
+                });
+                
+                const formData = {
+                    usuario_id: parseInt(userData.id),
+                    sala_id: parseInt(salaId),
+                    fecha_reserva: fechaReserva,
+                    hora_inicio: horaInicio,
+                    hora_fin: horaFin,
+                    proposito: proposito.trim(),
+                    notas: `Asistentes estimados: ${numAsistentes}`,
+                    estado: 'confirmada'
+                };
+
+                // Validaciones básicas
+                if (!formData.usuario_id || isNaN(formData.usuario_id)) {
+                    throw new Error('Error al obtener información del usuario');
+                }
+                
+                if (!formData.sala_id || isNaN(formData.sala_id)) {
+                    throw new Error('Debe seleccionar una sala');
+                }
+                
+                if (!formData.fecha_reserva) {
+                    throw new Error('Debe seleccionar una fecha');
+                }
+                
+                if (!formData.hora_inicio) {
+                    throw new Error('Debe especificar la hora de inicio');
+                }
+                
+                if (!formData.hora_fin) {
+                    throw new Error('Debe especificar la hora de fin');
+                }
+                
+                if (!formData.proposito || formData.proposito.length < 3) {
+                    throw new Error('Debe especificar el propósito de la reserva (mínimo 3 caracteres)');
+                }
+
+                // Validar que la fecha no sea en el pasado
+                const fechaSeleccionada = new Date(formData.fecha_reserva);
+                const fechaHoy = new Date();
+                fechaHoy.setHours(0, 0, 0, 0);
+                
+                if (fechaSeleccionada < fechaHoy) {
+                    throw new Error('No puedes reservar para fechas pasadas');
+                }
+
+                // Validar horarios
+                if (formData.hora_fin <= formData.hora_inicio) {
+                    throw new Error('La hora de fin debe ser posterior a la hora de inicio');
+                }
+
+                // AGREGAR VERIFICACIÓN DE DISPONIBILIDAD ANTES DE ENVIAR
+                const disponibilidad = await verificarDisponibilidad(
+                    parseInt(salaId), 
+                    fechaReserva, 
+                    horaInicio, 
+                    horaFin
+                );
+                
+                if (!disponibilidad.disponible) {
+                    const conflicto = disponibilidad.conflictos[0];
+                    throw new Error(
+                        `La sala ya está reservada de ${conflicto.hora_inicio} a ${conflicto.hora_fin} ` +
+                        `por ${conflicto.usuario_nombre} para: ${conflicto.proposito}`
+                    );
+                }
+
+                // Debug: verificar datos finales
+                console.log('Datos a enviar:', formData);
+
+                const response = await fetch(CONFIG.API_RESERVAS, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Reserva creada exitosamente!',
+                        text: 'Tu reserva ha sido confirmada',
+                        confirmButtonText: 'Entendido'
+                    });
+                    
+                    // Limpiar formulario
+                    document.getElementById('form-nueva-reserva').reset();
+                    
+                    // POR ESTA:
+                    // Actualizar solo las estadísticas sin errores
+                    try {
+                        const stats = {
+                            'total-reservas-activas': parseInt(document.getElementById('total-reservas-activas').textContent) + 1,
+                            'stat-reservas': parseInt(document.getElementById('stat-reservas').textContent) + 1
+                        };
+                        
+                        Object.entries(stats).forEach(([id, value]) => {
+                            const element = document.getElementById(id);
+                            if (element) element.textContent = value;
+                        });
+                    } catch (e) {
+                        console.log('Estadísticas no actualizadas, pero reserva creada correctamente');
+                    }
+                    
+                } else {
+                    throw new Error(result.error || 'Error al crear la reserva');
+                }
+
+            } catch (error) {
+                console.error('Error:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Conflicto de horario',
+                    text: error.message,
+                    confirmButtonText: 'Entendido'
+                });
+            }
+        }
+
+        // ========== FUNCIÓN PARA CARGAR SALAS DISPONIBLES ==========
+        async function cargarSalasDisponibles() {
+            try {
+                const response = await fetch(CONFIG.API_SALAS);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const selectSala = document.getElementById('sala-reserva');
+                    if (!selectSala) return;
+                    
+                    selectSala.innerHTML = '<option value="">Selecciona una sala</option>';
+                    
+                    // Filtrar solo salas disponibles
+                    const salasDisponibles = data.data.filter(sala => sala.estado === 'disponible');
+                    
+                    salasDisponibles.forEach(sala => {
+                        const equipamiento = [];
+                        if (sala.tiene_proyector) equipamiento.push('Proyector');
+                        if (sala.tiene_pizarra_digital) equipamiento.push('Pizarra Digital');
+                        if (sala.es_accesible) equipamiento.push('Accesible');
+                        
+                        const equipamientoTexto = equipamiento.length > 0 ? ` (${equipamiento.join(', ')})` : '';
+                        
+                        selectSala.innerHTML += `
+                            <option value="${sala.id}">
+                                ${sala.nombre} - Cap. ${sala.capacidad} - ${sala.tipo}${equipamientoTexto}
+                            </option>
+                        `;
+                    });
+                }
+            } catch (error) {
+                console.error('Error al cargar salas:', error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Error',
+                    text: 'No se pudieron cargar las salas disponibles'
+                });
+            }
+        }
 
         // ========== GESTIÓN DE EVENT LISTENERS ==========
         function initEventListeners() {
@@ -1158,9 +1369,9 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                 'soporte': cargarMisTickets,
                 'reservas': () => console.log('Cargar salas disponibles'),
                 'mis-qr': () => console.log('Cargar códigos QR'),
-                'nueva-reserva': () => console.log('Configurar formulario'),
-                'capacitaciones': cargarCapacitaciones, // ← CAMBIAR ESTA LÍNEA
-                'manual': loadManualesUsuario  // ← AGREGAR ESTA LÍNEA
+                'nueva-reserva': cargarSalasDisponibles, // ← CAMBIAR ESTA LÍNEA
+                'capacitaciones': cargarCapacitaciones,
+                'manual': loadManualesUsuario
             };
             
             const handler = loadHandlers[seccion];
@@ -2337,6 +2548,75 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                     title: 'Error de descarga',
                     text: 'No se pudo descargar el manual. Intente nuevamente.'
                 });
+            }
+        }
+
+        // ========== FUNCIÓN PARA VERIFICAR DISPONIBILIDAD EN TIEMPO REAL ==========
+        async function verificarDisponibilidad(salaId, fecha, horaInicio, horaFin) {
+            try {
+                const response = await fetch(`${CONFIG.API_RESERVAS}?sala_id=${salaId}&fecha=${fecha}&estado=confirmada`);
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    // Verificar si hay conflictos con reservas existentes
+                    const conflictos = data.data.filter(reserva => {
+                        const inicioExistente = reserva.hora_inicio;
+                        const finExistente = reserva.hora_fin;
+                        
+                        // Verificar solapamientos
+                        return (
+                            (horaInicio >= inicioExistente && horaInicio < finExistente) ||
+                            (horaFin > inicioExistente && horaFin <= finExistente) ||
+                            (horaInicio <= inicioExistente && horaFin >= finExistente)
+                        );
+                    });
+                    
+                    return {
+                        disponible: conflictos.length === 0,
+                        conflictos: conflictos
+                    };
+                }
+                
+                return { disponible: true, conflictos: [] };
+            } catch (error) {
+                console.error('Error al verificar disponibilidad:', error);
+                return { disponible: true, conflictos: [] }; // En caso de error, permitir continuar
+            }
+        }
+
+        // ========== FUNCIÓN PARA LIMPIAR FORMULARIO ==========
+        function limpiarFormulario() {
+            document.getElementById('form-nueva-reserva').reset();
+            // Opcional: recargar las salas por si han cambiado
+            cargarSalasDisponibles();
+        }
+
+        // Event listeners para campos de horario
+        document.getElementById('sala-reserva').addEventListener('change', verificarYMostrarDisponibilidad);
+        document.getElementById('fecha-reserva').addEventListener('change', verificarYMostrarDisponibilidad);
+        document.getElementById('hora-inicio').addEventListener('change', verificarYMostrarDisponibilidad);
+        document.getElementById('hora-fin').addEventListener('change', verificarYMostrarDisponibilidad);
+
+        async function verificarYMostrarDisponibilidad() {
+            const sala = document.getElementById('sala-reserva').value;
+            const fecha = document.getElementById('fecha-reserva').value;
+            const inicio = document.getElementById('hora-inicio').value;
+            const fin = document.getElementById('hora-fin').value;
+            
+            if (sala && fecha && inicio && fin) {
+                const disponibilidad = await verificarDisponibilidad(parseInt(sala), fecha, inicio, fin);
+                
+                // Mostrar mensaje de disponibilidad
+                const mensaje = document.getElementById('mensaje-disponibilidad') || crearMensajeDisponibilidad();
+                
+                if (disponibilidad.disponible) {
+                    mensaje.className = 'alert alert-success mt-2';
+                    mensaje.innerHTML = '<i class="bi bi-check-circle me-1"></i>Horario disponible';
+                } else {
+                    mensaje.className = 'alert alert-warning mt-2';
+                    const conflicto = disponibilidad.conflictos[0];
+                    mensaje.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Conflicto: Reserva existente de ${conflicto.hora_inicio} a ${conflicto.hora_fin}`;
+                }
             }
         }
     </script>
