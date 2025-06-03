@@ -255,6 +255,9 @@ function handleCreate() {
     $json = file_get_contents('php://input');
     $data = json_decode($json, true);
 
+    // DEBUG: Log de los datos recibidos
+    error_log("DEBUG - Datos recibidos en create reserva: " . print_r($data, true));
+
     if (!$data) {
         throw new Exception('No se recibieron datos válidos');
     }
@@ -273,6 +276,15 @@ function handleCreate() {
     $proposito = trim($data['proposito']);
     $notas = isset($data['notas']) ? trim($data['notas']) : null;
     $estado = isset($data['estado']) ? trim($data['estado']) : 'confirmada';
+
+    // DEBUG: Log de los datos procesados
+    error_log("DEBUG - usuario_id procesado: " . $usuario_id);
+    error_log("DEBUG - Datos procesados: usuario_id=$usuario_id, sala_id=$sala_id, fecha=$fecha_reserva");
+
+    // Validar que el usuario_id sea válido
+    if ($usuario_id <= 0) {
+        throw new Exception('ID de usuario inválido: ' . $usuario_id);
+    }
 
     // Validaciones específicas
     if (strlen($proposito) < 3 || strlen($proposito) > 255) {
