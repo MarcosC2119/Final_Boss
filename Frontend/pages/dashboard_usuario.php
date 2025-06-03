@@ -550,6 +550,15 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                                                     <option value="50">50+ personas</option>
                                                 </select>
                                             </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label">Equipamiento</label>
+                                                <select class="form-select" id="filtro-equipamiento">
+                                                    <option value="">Cualquier equipamiento</option>
+                                                    <option value="proyector">Con Proyector</option>
+                                                    <option value="pizarra_digital">Con Pizarra Digital</option>
+                                                    <option value="accesible">Accesible</option>
+                                                </select>
+                                            </div>
                                         </div>
                                         <div class="mt-3">
                                             <button class="btn btn-primary" onclick="buscarSalas()">
@@ -1367,7 +1376,10 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
         function loadSectionData(seccion) {
             const loadHandlers = {
                 'soporte': cargarMisTickets,
-                'reservas': () => console.log('Cargar salas disponibles'),
+                'reservas': () => {
+                    // Cargar todas las salas disponibles por defecto
+                    buscarSalas();
+                },
                 'mis-qr': () => console.log('Cargar códigos QR'),
                 'nueva-reserva': cargarSalasDisponibles, // ← CAMBIAR ESTA LÍNEA
                 'capacitaciones': cargarCapacitaciones,
@@ -2618,6 +2630,269 @@ $usuario_rol = $_SESSION['rol'] ?? 'docente';
                     mensaje.innerHTML = `<i class="bi bi-exclamation-triangle me-1"></i>Conflicto: Reserva existente de ${conflicto.hora_inicio} a ${conflicto.hora_fin}`;
                 }
             }
+        }
+
+        // ========== FUNCIÓN PARA BUSCAR SALAS CON FILTROS ==========
+        async function buscarSalas() {
+            try {
+                // Mostrar loading
+                const container = document.getElementById('lista-salas-disponibles');
+                if (!container) return;
+                
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="mt-2 text-muted">Buscando salas disponibles...</p>
+                    </div>
+                `;
+
+                // Obtener valores de filtros
+                const filtros = {
+                    tipo: document.getElementById('filtro-tipo')?.value || '',
+                    fecha: document.getElementById('filtro-fecha')?.value || '',
+                    capacidad: document.getElementById('filtro-capacidad')?.value || '',
+                    equipamiento: document.getElementById('filtro-equipamiento')?.value || ''
+                };
+
+                // Construir URL con filtros
+                let url = CONFIG.API_SALAS;
+                const params = new URLSearchParams();
+                
+                if (filtros.tipo) params.append('tipo', filtros.tipo);
+                if (filtros.estado !== 'mantenimiento') params.append('estado', 'disponible');
+                
+                if (params.toString()) {
+                    url += '?' + params.toString();
+                }
+
+                const response = await fetch(url);
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    let salas = data.data;
+
+                    // Aplicar filtros adicionales
+                    if (filtros.capacidad) {
+                        const capacidadMinima = parseInt(filtros.capacidad);
+                        salas = salas.filter(sala => sala.capacidad >= capacidadMinima);
+                    }
+
+                    if (filtros.equipamiento) {
+                        salas = salas.filter(sala => {
+                            switch(filtros.equipamiento) {
+                                case 'proyector': return sala.tiene_proyector;
+                                case 'pizarra_digital': return sala.tiene_pizarra_digital;
+                                case 'accesible': return sala.es_accesible;
+                                default: return true;
+                            }
+                        });
+                    }
+
+                    // Si hay fecha seleccionada, verificar disponibilidad
+                    if (filtros.fecha) {
+                        // Verificar qué salas están disponibles en esa fecha
+                        const salasConDisponibilidad = await Promise.all(
+                            salas.map(async (sala) => {
+                                const reservasResponse = await fetch(
+                                    `${CONFIG.API_RESERVAS}?sala_id=${sala.id}&fecha=${filtros.fecha}&estado=confirmada`
+                                );
+                                const reservasData = await reservasResponse.json();
+                                
+                                sala.reservas_del_dia = reservasData.success ? reservasData.data : [];
+                                sala.esta_disponible = sala.reservas_del_dia.length === 0;
+                                return sala;
+                            })
+                        );
+                        salas = salasConDisponibilidad;
+                    }
+
+                    mostrarSalasEncontradas(salas, filtros.fecha);
+                } else {
+                    throw new Error('No se pudieron cargar las salas');
+                }
+
+            } catch (error) {
+                console.error('Error al buscar salas:', error);
+                document.getElementById('lista-salas-disponibles').innerHTML = `
+                    <div class="alert alert-danger" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Error al cargar las salas. Intente nuevamente.
+                    </div>
+                `;
+            }
+        }
+
+        // ========== FUNCIÓN PARA MOSTRAR SALAS ENCONTRADAS ==========
+        function mostrarSalasEncontradas(salas, fecha = null) {
+            const container = document.getElementById('lista-salas-disponibles');
+            
+            if (salas.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-5">
+                        <i class="bi bi-search text-muted fs-1 mb-3"></i>
+                        <h5 class="text-muted">No se encontraron salas</h5>
+                        <p class="text-muted">Intente modificar los filtros de búsqueda</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const salasHTML = salas.map(sala => {
+                const equipamiento = [];
+                if (sala.tiene_proyector) equipamiento.push('<i class="bi bi-camera-reels me-1"></i>Proyector');
+                if (sala.tiene_pizarra_digital) equipamiento.push('<i class="bi bi-display me-1"></i>Pizarra Digital');
+                if (sala.es_accesible) equipamiento.push('<i class="bi bi-person-wheelchair me-1"></i>Accesible');
+
+                const estadoClass = sala.estado === 'disponible' ? 'success' : 'warning';
+                const estadoIcon = sala.estado === 'disponible' ? 'check-circle' : 'exclamation-triangle';
+                
+                // Si hay fecha seleccionada, mostrar disponibilidad específica
+                let disponibilidadInfo = '';
+                if (fecha && sala.reservas_del_dia !== undefined) {
+                    if (sala.esta_disponible) {
+                        disponibilidadInfo = `
+                            <div class="alert alert-success mt-2 py-2">
+                                <i class="bi bi-check-circle me-1"></i>
+                                Disponible todo el día ${formatearFecha(fecha)}
+                            </div>
+                        `;
+                    } else {
+                        const horariosOcupados = sala.reservas_del_dia.map(r => 
+                            `${r.hora_inicio} - ${r.hora_fin}`
+                        ).join(', ');
+                        disponibilidadInfo = `
+                            <div class="alert alert-warning mt-2 py-2">
+                                <i class="bi bi-clock me-1"></i>
+                                <small>Ocupada: ${horariosOcupados}</small>
+                            </div>
+                        `;
+                    }
+                }
+
+                return `
+                    <div class="col-lg-6 col-xl-4 mb-4">
+                        <div class="card h-100 border-0 shadow-sm card-hover">
+                            <div class="card-body p-4">
+                                <div class="d-flex justify-content-between align-items-start mb-3">
+                                    <div>
+                                        <h5 class="card-title fw-bold mb-1">${sala.nombre}</h5>
+                                        <span class="badge bg-primary bg-opacity-10 text-primary">
+                                            ${sala.tipo.charAt(0).toUpperCase() + sala.tipo.slice(1)}
+                                        </span>
+                                    </div>
+                                    <span class="badge bg-${estadoClass} bg-opacity-10 text-${estadoClass}">
+                                        <i class="bi bi-${estadoIcon} me-1"></i>
+                                        ${sala.estado.charAt(0).toUpperCase() + sala.estado.slice(1)}
+                                    </span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center mb-2">
+                                        <i class="bi bi-people me-2 text-muted"></i>
+                                        <span class="fw-semibold">Capacidad: ${sala.capacidad} personas</span>
+                                    </div>
+                                    
+                                    <div class="small text-muted">
+                                        ${equipamiento.length > 0 ? equipamiento.join('<br>') : 'Sin equipamiento especial'}
+                                    </div>
+                                </div>
+
+                                ${sala.descripcion ? `
+                                    <div class="mb-3">
+                                        <small class="text-muted">${sala.descripcion}</small>
+                                    </div>
+                                ` : ''}
+
+                                ${disponibilidadInfo}
+
+                                <div class="d-grid gap-2">
+                                    <button class="btn btn-primary" onclick="reservarSala(${sala.id}, '${sala.nombre}')">
+                                        <i class="bi bi-calendar-plus me-2"></i>Reservar Sala
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="verDetallesSala(${sala.id})">
+                                        <i class="bi bi-info-circle me-2"></i>Ver Detalles
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            container.innerHTML = `
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="text-muted mb-0">
+                                <i class="bi bi-building me-2"></i>
+                                Se encontraron ${salas.length} sala${salas.length !== 1 ? 's' : ''}
+                            </h6>
+                            <button class="btn btn-outline-primary btn-sm" onclick="limpiarFiltros()">
+                                <i class="bi bi-arrow-clockwise me-1"></i>Limpiar Filtros
+                            </button>
+                        </div>
+                    </div>
+                    ${salasHTML}
+                </div>
+            `;
+        }
+
+        // ========== FUNCIÓN PARA RESERVAR SALA DIRECTAMENTE ==========
+        function reservarSala(salaId, salaNombre) {
+            // Pre-llenar el formulario de nueva reserva
+            mostrarSeccion('nueva-reserva');
+            
+            // Esperar un momento para que se cargue la sección
+            setTimeout(() => {
+                const selectSala = document.getElementById('sala-reserva');
+                if (selectSala) {
+                    selectSala.value = salaId;
+                }
+                
+                // Si hay fecha seleccionada en filtros, también pre-llenarla
+                const fechaFiltro = document.getElementById('filtro-fecha')?.value;
+                if (fechaFiltro) {
+                    const fechaReserva = document.getElementById('fecha-reserva');
+                    if (fechaReserva) {
+                        fechaReserva.value = fechaFiltro;
+                    }
+                }
+            }, 100);
+        }
+
+        // ========== FUNCIÓN PARA VER DETALLES DE SALA ==========
+        function verDetallesSala(salaId) {
+            // Redirigir a página de detalles de sala
+            window.open(`sala-info.html?id=${salaId}`, '_blank');
+        }
+
+        // ========== FUNCIÓN PARA LIMPIAR FILTROS ==========
+        function limpiarFiltros() {
+            document.getElementById('filtro-tipo').value = '';
+            document.getElementById('filtro-fecha').value = '';
+            document.getElementById('filtro-capacidad').value = '';
+            document.getElementById('filtro-equipamiento').value = '';
+            
+            // Mostrar mensaje inicial
+            document.getElementById('lista-salas-disponibles').innerHTML = `
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-search fs-1 mb-3"></i>
+                    <p>Selecciona los filtros y busca salas disponibles</p>
+                </div>
+            `;
+        }
+
+        // ========== FUNCIÓN AUXILIAR PARA FORMATEAR FECHA ==========
+        function formatearFecha(fecha) {
+            const date = new Date(fecha + 'T00:00:00');
+            return date.toLocaleDateString('es-ES', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
         }
     </script>
 </body>
